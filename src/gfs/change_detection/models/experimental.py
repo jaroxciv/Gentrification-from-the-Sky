@@ -28,6 +28,8 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from torch import Tensor, nn
 
+from gfs.config import RANDOM_STATE
+
 FloatArray = npt.NDArray[np.float64]
 
 
@@ -161,7 +163,7 @@ def pca_kmeans(
     pca = PCA(n_components=rate)
     feature = pca.fit_transform(vk_arr)
 
-    kmeans = KMeans(n_clusters=2, random_state=0).fit(feature)
+    kmeans = KMeans(n_clusters=2, random_state=RANDOM_STATE).fit(feature)
     labels = np.asarray(kmeans.labels_)
 
     return labels.reshape(image_size[1], image_size[2]).astype(np.int_)

@@ -47,6 +47,7 @@ dependencies = [
     "dropbox>=12.0",
     "typer>=0.26.5",
     "rich>=15.0.0",
+    "loguru>=0.7.3",
 ]
 
 [project.scripts]

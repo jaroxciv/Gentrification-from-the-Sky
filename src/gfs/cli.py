@@ -109,7 +109,9 @@ def run_change_detection() -> None:
     from gfs.change_detection.models.tinycd import TinyCD
     from gfs.change_detection.train import train_resnet_band, train_siamese
     from gfs.config import CD_EPOCHS, CD_METHODS
+    from gfs.seed import seed_everything
 
+    seed_everything()  # deterministic weight init + data shuffling
     t1 = str(COMPOSITES_DIR / f"clipped_merged_{YEAR_T1}.tiff")
     t2 = str(COMPOSITES_DIR / f"clipped_merged_{YEAR_T2}.tiff")
     device = select_device()

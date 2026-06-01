@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import torch
 import torch.optim as optim
+from loguru import logger
 from torch import Tensor, nn
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader, TensorDataset
@@ -102,11 +103,11 @@ def train_siamese(
                 loss.backward()
                 optimizer.step()
         scheduler.step()
-        print(f"Epoch {epoch + 1}, Loss: {loss.item():.4f}")
+        logger.info(f"Epoch {epoch + 1}, Loss: {loss.item():.4f}")
 
     if save_path is not None:
         torch.save(model.state_dict(), save_path)
-        print(f"Model saved to {save_path}")
+        logger.info(f"Model saved to {save_path}")
     return model
 
 
@@ -145,9 +146,9 @@ def train_resnet_band(
         loss.backward()
         optimizer.step()
         scheduler.step()
-        print(f"Epoch {epoch + 1}, Loss: {loss.item()}")
+        logger.info(f"Epoch {epoch + 1}, Loss: {loss.item()}")
 
     if save_path is not None:
         torch.save(model.state_dict(), save_path)
-        print(f"Model saved to {save_path}")
+        logger.info(f"Model saved to {save_path}")
     return model

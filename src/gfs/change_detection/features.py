@@ -27,6 +27,7 @@ import numpy as np
 import rasterio
 import torch
 import torch.nn.functional as F
+from loguru import logger
 from torch import nn
 
 from gfs.change_detection.common import (
@@ -178,7 +179,7 @@ def threshold_and_save_band(
     output_path = os.path.join(output_dir, f"features_band_{band}_{model_name}.tiff")
     with rasterio.open(output_path, "w", **raster_meta) as dst:
         dst.write(binary_u8, 1)
-    print(f"Change map features for band {band} saved to {output_path}")
+    logger.info(f"Change map features for band {band} saved to {output_path}")
     return output_path
 
 
