@@ -32,6 +32,7 @@ import numpy as np
 import pandas as pd
 import rasterio
 import rasterio.features
+from loguru import logger
 
 from gfs.config import GEOGRAPHY_CODE_COL
 
@@ -154,6 +155,12 @@ def aggregate_changes_to_lsoa(
     # Convert raw counts to a percentage of LSOA area. The pixel counts live on
     # the raster's (working) grid, so area is measured in the *same* CRS — not the
     # boundary CRS — to keep the count/area density internally consistent.
+    if lsoa_gdf.crs is None:
+        logger.warning(
+            "LSOA boundary has no CRS; assuming it is already in the raster CRS "
+            f"({raster_crs}). Areas (and so the change percentages) will be wrong "
+            "if it is not — set a CRS on the boundary to be safe."
+        )
     lsoa_in_raster_crs = (
         lsoa_gdf.to_crs(raster_crs)
         if lsoa_gdf.crs is not None and lsoa_gdf.crs != raster_crs

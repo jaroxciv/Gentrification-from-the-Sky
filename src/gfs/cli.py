@@ -233,12 +233,18 @@ def run_ablation(*, regenerate: bool = False) -> None:
     import pandas as pd
 
     from gfs.composites.landcover import default_dynamic_world_path
+    from gfs.config import SENTINEL2_BANDS
     from gfs.modeling import ablation, dataset
     from gfs.modeling.features import aggregate_changes_to_lsoa, create_percentage_features
 
     _stage("Ablation", "threshold sweep (simple-diff)")
     thresholds_dir = OUTPUTS_DIR / "thresholds"
-    if regenerate or not any(thresholds_dir.glob("*.tiff")):
+    sweep = ablation.default_thresholds()
+    # One map per (band, threshold); regenerate unless a *complete* set is present
+    # (a single leftover tiff from a crashed run must not skip generation).
+    expected_maps = len(SENTINEL2_BANDS) * len(sweep)
+    have_maps = len(list(thresholds_dir.glob("*.tiff")))
+    if regenerate or have_maps < expected_maps:
         from gfs.change_detection.threshold_ablation import generate_threshold_change_maps
 
         landcover_path = Path(default_dynamic_world_path())
@@ -250,10 +256,12 @@ def run_ablation(*, regenerate: bool = False) -> None:
             )
         t1 = str(COMPOSITES_DIR / f"clipped_merged_{YEAR_T1}.tiff")
         t2 = str(COMPOSITES_DIR / f"clipped_merged_{YEAR_T2}.tiff")
+        if have_maps and have_maps < expected_maps:
+            console.print(
+                f"  [yellow]found {have_maps}/{expected_maps} maps (incomplete) — regenerating[/]"
+            )
         console.print("  generating per-threshold change maps…")
-        generate_threshold_change_maps(
-            t1, t2, str(landcover_path), str(thresholds_dir), ablation.default_thresholds()
-        )
+        generate_threshold_change_maps(t1, t2, str(landcover_path), str(thresholds_dir), sweep)
 
     lsoa_gdf = cast(gpd.GeoDataFrame, gpd.read_file(DEFAULT_BOUNDARY))
     lsoa_changes = aggregate_changes_to_lsoa(str(thresholds_dir), lsoa_gdf).reset_index()

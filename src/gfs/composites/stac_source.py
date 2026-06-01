@@ -129,8 +129,9 @@ def build_composite_stac(
 
     COMPOSITES_DIR.mkdir(parents=True, exist_ok=True)
     median.rio.to_raster(out_path)
-    # Name the bands B1..B12 (the to_array order is BAND_ASSETS' order) so the
-    # GeoTIFF self-documents — an improvement on the unnamed shipped bands.
+    # Name the 11 study bands (B1..B8, B8A, B11, B12 — the to_array order is
+    # BAND_ASSETS' order) so the GeoTIFF self-documents (the shipped bands are
+    # unnamed). Descriptions are cosmetic: downstream reads bands positionally.
     with rasterio.open(out_path, "r+") as dst:
         dst.descriptions = tuple(BAND_ASSETS.keys())
     return out_path

@@ -190,6 +190,15 @@ def _write_band_thresholds(job: _BandJob) -> list[str]:
             "nodata": None,
         }
 
+    # The difference, green mask and output grid must share one shape; otherwise
+    # the elementwise ops / write fail with an opaque broadcast error in a worker.
+    if not band1.shape == band2.shape == job.green_mask.shape:
+        raise ValueError(
+            f"band {job.band}: t1 {band1.shape}, t2 {band2.shape} and the green "
+            f"mask {job.green_mask.shape} must share one grid — the composites and "
+            "the land-cover layer must be co-registered."
+        )
+
     # Difference is threshold-independent — compute the matched difference once,
     # then only re-threshold/prune per sweep value.
     image1 = np.nan_to_num(band1, nan=float(np.nanmin(band1))).astype(np.float64)
