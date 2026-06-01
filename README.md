@@ -61,9 +61,14 @@ src/gfs/
 ├── modeling/            # LSOA aggregation, classifiers, ablation
 └── viz/                 # maps & figures
 scripts/                 # runnable pipeline entrypoints + data/Dropbox helpers
-notebooks/               # thin narrative notebooks (output-stripped)
+studies/                 # example StudyConfig TOML (apply to another city)
+tests/                   # behavioral tests (functional contracts)
 data/                    # datasets (git-ignored; see data/README.md)
 ```
+
+> The analysis was migrated from notebooks into the `gfs` package; the `scripts/`
+> entrypoints (and the `gfs` CLI) replace them. `nbstripout` is configured for any
+> notebooks contributors add later.
 
 ## Installation
 
