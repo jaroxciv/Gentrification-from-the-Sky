@@ -20,6 +20,7 @@ from __future__ import annotations
 from typing import Any
 
 import geopandas as gpd
+import rasterio
 
 from gfs.config import (
     COMPOSITES_DIR,
@@ -122,8 +123,14 @@ def build_composite_stac(
     clear = ~cube["scl"].isin(SCL_DROP)
     bands = cube[assets].where(clear)
     median = bands.to_array(dim="band").median(dim="time")
-    median = median.rio.write_crs(crs)
+    # Profile parity with the as-published WASDI composites: float32 reflectance
+    # (halves file size vs the float64 median and matches what downstream reads).
+    median = median.astype("float32").rio.write_crs(crs)
 
     COMPOSITES_DIR.mkdir(parents=True, exist_ok=True)
     median.rio.to_raster(out_path)
+    # Name the bands B1..B12 (the to_array order is BAND_ASSETS' order) so the
+    # GeoTIFF self-documents — an improvement on the unnamed shipped bands.
+    with rasterio.open(out_path, "r+") as dst:
+        dst.descriptions = tuple(BAND_ASSETS.keys())
     return out_path

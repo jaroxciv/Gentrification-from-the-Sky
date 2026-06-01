@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from typing import Any, cast
 
 import pandas as pd
-from sklearn.base import ClassifierMixin
+from sklearn.base import ClassifierMixin, clone
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import (
     GridSearchCV,
@@ -43,11 +43,15 @@ def build_pipeline(estimator: ClassifierMixin) -> Pipeline:
     Putting the transform in the pipeline means ``GridSearchCV`` /
     ``cross_val_score`` refit it on each training fold only, so the transform
     never sees the held-out fold (avoids the leakage of transforming up front).
+
+    ``estimator`` is :func:`~sklearn.base.clone`\\ d so callers can pass a shared
+    spec/base instance (reused across models or ablation thresholds) without its
+    fitted state ever leaking between pipelines.
     """
     return Pipeline(
         [
             ("transform", PowerTransformer(method="yeo-johnson", standardize=True)),
-            (_CLF_STEP, estimator),
+            (_CLF_STEP, clone(estimator)),
         ]
     )
 
