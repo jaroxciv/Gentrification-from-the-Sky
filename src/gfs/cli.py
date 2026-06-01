@@ -58,35 +58,35 @@ def _planning_layer_paths(planning_dir: Path) -> dict[str, str]:
     }
 
 
-# --- X: composites ----------------------------------------------------------
-def run_composites(*, boundary: Path = DEFAULT_BOUNDARY, ee_project: str | None = None) -> None:
-    """Build + clip/merge the Sentinel-2 composites for both study years (paper §3.2)."""
-    import geopandas as gpd
+# --- X: composites (WASDI) --------------------------------------------------
+def run_composites(*, boundary: Path = DEFAULT_BOUNDARY, confirm_paid_run: bool = False) -> None:
+    """Regenerate the Sentinel-2 composites on WASDI for both years (paper §3.2).
 
-    from gfs.composites import clip_merge, processor, stats
-    from gfs.composites.processor import CompositeSpec
+    The composites already ship as data; this only rebuilds them. WASDI is a
+    licensed platform (arrange usage rights with the WASDI team) and runs metered
+    remote compute, so it is gated behind ``confirm_paid_run`` / ``--confirm``.
+    """
+    from gfs.composites import wasdi_source
 
-    _stage("Composites (X)", f"Sentinel-2 {YEAR_T1} & {YEAR_T2}")
-    processor.initialize_ee(project=ee_project)
-    region_gdf = gpd.read_file(str(boundary))
-    region = processor.london_geometry(region_gdf)
-
-    COMPOSITES_DIR.mkdir(parents=True, exist_ok=True)
-    merged_paths: dict[int, str] = {}
+    _stage("Composites (X) — WASDI", f"Sentinel-2 {YEAR_T1} & {YEAR_T2}")
     for year in (YEAR_T1, YEAR_T2):
-        spec = CompositeSpec(year=year)
-        composite = processor.build_median_composite(spec, region)
-        raw_path = str(COMPOSITES_DIR / f"composite_{year}.tif")
-        processor.download_composite_local(composite, spec, region, raw_path)
-        merged = clip_merge.clip_and_merge_year([raw_path], region_gdf, year, average_overlaps=True)
-        if merged is not None:
-            merged_paths[year] = merged
-            console.print(f"  [green]✓[/] {year} -> {merged}")
+        tiles = wasdi_source.build_average_composite(
+            str(boundary), year, confirm_paid_run=confirm_paid_run
+        )
+        console.print(f"  [green]✓[/] {year}: processed {len(tiles)} tile(s) on WASDI")
+    console.print("  Download the processed tiles, then clip/merge with gfs.composites.clip_merge.")
 
-    if YEAR_T1 in merged_paths and YEAR_T2 in merged_paths:
-        pair = stats.load_pair(merged_paths[YEAR_T1], merged_paths[YEAR_T2])
-        diff = stats.masked_difference(pair)
-        console.print(f"  difference: {diff.shape}, {int(diff.count())} valid pixels")
+
+# --- land cover (Google Earth Engine) ---------------------------------------
+def run_landcover(*, boundary: Path = DEFAULT_BOUNDARY) -> Path:
+    """Export the Dynamic World land-cover (green areas) layer via Earth Engine."""
+    from gfs.composites import landcover
+
+    _stage("Land cover — Earth Engine", "Dynamic World (green areas)")
+    landcover.initialize_ee()
+    out = landcover.export_dynamic_world(str(boundary))
+    console.print(f"  [green]✓[/] wrote {out}")
+    return Path(out)
 
 
 # --- models: change detection -----------------------------------------------
@@ -302,10 +302,20 @@ def run_export(model: str = "tinycd") -> Path:
 @app.command()
 def composites(
     boundary: Annotated[Path, typer.Option(help="LSOA boundary shapefile.")] = DEFAULT_BOUNDARY,
-    ee_project: Annotated[str | None, typer.Option(help="Earth Engine project id.")] = None,
+    confirm: Annotated[
+        bool, typer.Option("--confirm", help="Confirm metered WASDI compute.")
+    ] = False,
 ) -> None:
-    """X — build the Sentinel-2 composites."""
-    run_composites(boundary=boundary, ee_project=ee_project)
+    """X — regenerate the Sentinel-2 composites on WASDI (already provided as data)."""
+    run_composites(boundary=boundary, confirm_paid_run=confirm)
+
+
+@app.command()
+def landcover(
+    boundary: Annotated[Path, typer.Option(help="LSOA boundary shapefile.")] = DEFAULT_BOUNDARY,
+) -> None:
+    """Export the Dynamic World land-cover (green areas) layer via Earth Engine."""
+    run_landcover(boundary=boundary)
 
 
 @app.command("change-detect")

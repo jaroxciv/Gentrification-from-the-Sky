@@ -674,6 +674,7 @@ dependencies = [
     { name = "torchvision", version = "0.27.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform != 'darwin'" },
     { name = "tqdm" },
     { name = "typer" },
+    { name = "wasdi" },
     { name = "xgboost" },
 ]
 
@@ -720,6 +721,7 @@ requires-dist = [
     { name = "torchvision", specifier = ">=0.19", index = "https://download.pytorch.org/whl/cpu" },
     { name = "tqdm", specifier = ">=4.66" },
     { name = "typer", specifier = ">=0.26.5" },
+    { name = "wasdi", specifier = ">=0.8.7.8" },
     { name = "xgboost", specifier = ">=2.1" },
 ]
 provides-extras = ["benchmark"]
@@ -2860,6 +2862,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e1/0d/4e93c8e6d1001a75763f87d8f5ecda8ebc7f4aa2153dddfaf4ae8892821a/virtualenv-21.4.2.tar.gz", hash = "sha256:38e6ee0a555615c0ea9da2ac7e9998fe8dc3b911dd33ad8eaad2020957653b0c", size = 7613326, upload-time = "2026-05-31T17:01:22.827Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/bf/c4/557dc082be035381b85fdb2b74e21d3d21b57750b74f2b47a32f3a639ff9/virtualenv-21.4.2-py3-none-any.whl", hash = "sha256:854210ca524a1a4d0d744734f4acbc721c3ffe163b85bbf5d56d14d5ae2f0fae", size = 7594079, upload-time = "2026-05-31T17:01:20.735Z" },
+]
+
+[[package]]
+name = "wasdi"
+version = "0.8.7.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/be/b8/5d01c42cf7802bc62ede4f1a9bdd9c70a27494d5c1b388d35c6db1b7d572/wasdi-0.8.7.8.tar.gz", hash = "sha256:53e396cbc0d9a9f813eda560725e03c211a5ecdf5f05352b2ef1d2adc7fc9ae4", size = 46255, upload-time = "2026-05-06T16:33:22.734Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/06/69/9877575b07535d90299c2e94f790fb4a536ea9cd7598339d478fc768684b/wasdi-0.8.7.8-py3-none-any.whl", hash = "sha256:dc51a9e6203f0926a3068382da8dca098c7fb81b4b9d47549cdcb60bef07b21d", size = 39437, upload-time = "2026-05-06T16:33:21.654Z" },
 ]
 
 [[package]]

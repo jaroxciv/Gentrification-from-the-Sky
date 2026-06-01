@@ -24,6 +24,24 @@ CENSUS_DIR = DATA_DIR / "census"
 BOUNDARIES_DIR = DATA_DIR / "boundaries"
 PLANNING_DIR = DATA_DIR / "planning_layers"
 
+# --- External data-source credentials (optional; for regenerating raw data) --
+# These power the two upstream stages whose outputs already ship as data:
+#   * WASDI    -> the raw Sentinel-2 composites (paid platform; see below)
+#   * Earth Engine -> the Dynamic World land-cover layer (green areas)
+# All are read from the environment / .env so runs stay headless and credential
+# files never enter git.
+#
+# Earth Engine: a project is always required; a service account makes auth fully
+# headless (preferred on HPC/CI), otherwise persistent user credentials are used.
+GEE_PROJECT = os.environ.get("GFS_GEE_PROJECT", "lse23-24")
+GEE_SERVICE_ACCOUNT = os.environ.get("GFS_GEE_SERVICE_ACCOUNT") or None
+GEE_SERVICE_ACCOUNT_KEY = os.environ.get("GFS_GEE_SERVICE_ACCOUNT_KEY") or None
+
+# WASDI: a JSON config with USER / PASSWORD / WORKSPACE (wasdi.init reads it).
+# NOTE: WASDI is a licensed platform (arrange usage rights with the WASDI team);
+# the compositing processor runs only on explicit opt-in (gfs.composites.wasdi_source).
+WASDI_CONFIG = Path(os.environ.get("GFS_WASDI_CONFIG", ROOT / "wasdi_config.json"))
+
 # Change-detection features land here, one subfolder per model
 # (e.g. outputs/features_tinycd/), matching the original project layout.
 FEATURES_DIR = OUTPUTS_DIR

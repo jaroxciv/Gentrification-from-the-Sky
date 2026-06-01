@@ -2,6 +2,10 @@
 .env
 *.env
 !.env.example
+wasdi_config.json
+*-service-account*.json
+*_service_account*.json
+gee-*.json
 
 # --- Python / uv ---
 .venv/
