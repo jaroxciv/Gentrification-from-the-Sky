@@ -44,6 +44,15 @@ DYNAMIC_WORLD_CLASSES = (
 )
 
 
+def default_dynamic_world_path(scale: int = 10) -> str:
+    """Default on-disk path for the exported Dynamic World land-cover raster.
+
+    Single-sources the filename so the exporter and any consumer (e.g. the §5
+    threshold ablation's green mask) agree without hard-coding it twice.
+    """
+    return str(DATA_DIR / f"dynamic_world_london_{scale}m.tif")
+
+
 def initialize_ee(
     project: str = GEE_PROJECT,
     *,
@@ -85,7 +94,7 @@ def export_dynamic_world(
     import geopandas as gpd
 
     if out_path is None:
-        out_path = str(DATA_DIR / f"dynamic_world_london_{scale}m.tif")
+        out_path = default_dynamic_world_path(scale)
 
     # Use the boundary's bounding rectangle (4 vertices, in WGS84) as the region.
     # Passing the full London outline — thousands of vertices — would inflate the

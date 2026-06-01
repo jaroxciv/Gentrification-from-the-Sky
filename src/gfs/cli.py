@@ -219,21 +219,44 @@ def run_modeling(model: str = "tinycd") -> None:
     frame.to_csv(OUTPUTS_DIR / f"modeling_metrics_{model}.csv", index=False)
 
 
-def run_ablation() -> None:
-    """Run the change-threshold ablation sweep (paper §5)."""
+def run_ablation(*, regenerate: bool = False) -> None:
+    """Run the change-threshold ablation sweep (paper §5).
+
+    Generates the per-threshold simple-diff change maps first (skipped if they
+    already exist, unless ``regenerate``), then aggregates them to LSOAs and
+    sweeps the classifier across thresholds. The green mask comes from the
+    Dynamic World land cover (run ``gfs landcover`` once to produce it).
+    """
     from typing import cast
 
     import geopandas as gpd
     import pandas as pd
 
+    from gfs.composites.landcover import default_dynamic_world_path
     from gfs.modeling import ablation, dataset
     from gfs.modeling.features import aggregate_changes_to_lsoa, create_percentage_features
 
     _stage("Ablation", "threshold sweep (simple-diff)")
+    thresholds_dir = OUTPUTS_DIR / "thresholds"
+    if regenerate or not any(thresholds_dir.glob("*.tiff")):
+        from gfs.change_detection.threshold_ablation import generate_threshold_change_maps
+
+        landcover_path = Path(default_dynamic_world_path())
+        if not landcover_path.exists():
+            raise RuntimeError(
+                f"Dynamic World land cover not found at {landcover_path}. "
+                "Run `gfs landcover` first (it builds the green-areas mask the "
+                "ablation excludes from change)."
+            )
+        t1 = str(COMPOSITES_DIR / f"clipped_merged_{YEAR_T1}.tiff")
+        t2 = str(COMPOSITES_DIR / f"clipped_merged_{YEAR_T2}.tiff")
+        console.print("  generating per-threshold change maps…")
+        generate_threshold_change_maps(
+            t1, t2, str(landcover_path), str(thresholds_dir), ablation.default_thresholds()
+        )
+
     lsoa_gdf = cast(gpd.GeoDataFrame, gpd.read_file(DEFAULT_BOUNDARY))
-    lsoa_changes = aggregate_changes_to_lsoa(
-        str(OUTPUTS_DIR / "thresholds"), lsoa_gdf
-    ).reset_index()
+    lsoa_changes = aggregate_changes_to_lsoa(str(thresholds_dir), lsoa_gdf).reset_index()
     planning_gdf = create_percentage_features(lsoa_gdf, _planning_layer_paths(PLANNING_DIR))
     planning = cast(pd.DataFrame, planning_gdf.drop(columns="geometry"))
     planning_cols = dataset.planning_predictors(planning)
@@ -310,9 +333,14 @@ def model(
 
 
 @app.command()
-def ablation() -> None:
+def ablation(
+    regenerate: Annotated[
+        bool,
+        typer.Option("--regenerate", help="Rebuild the per-threshold change maps even if present."),
+    ] = False,
+) -> None:
     """Run the change-threshold ablation sweep."""
-    run_ablation()
+    run_ablation(regenerate=regenerate)
 
 
 @app.command()
