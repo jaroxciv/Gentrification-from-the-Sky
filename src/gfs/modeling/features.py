@@ -32,6 +32,7 @@ import numpy as np
 import pandas as pd
 import rasterio
 import rasterio.features
+from loguru import logger
 
 from gfs.config import GEOGRAPHY_CODE_COL
 
@@ -142,6 +143,7 @@ def aggregate_changes_to_lsoa(
 
     with rasterio.open(files[0]) as src:
         id_grid, codes = rasterize_lsoa_ids(lsoa_gdf, src.transform, src.shape, src.crs)
+        raster_crs = src.crs
 
     lsoa_changes = pd.DataFrame(index=pd.Index(codes, name=LSOA_CODE_COL))
     for change_file in files:
@@ -150,8 +152,21 @@ def aggregate_changes_to_lsoa(
         counts = _count_pixels_per_id(changes, id_grid, len(codes), cfg.min_change_value)
         lsoa_changes[os.path.basename(change_file).split(".")[0]] = counts
 
-    # Convert raw counts to a percentage of LSOA area (m^2 in the boundary CRS).
-    area_by_code = cast("gpd.GeoSeries", lsoa_gdf.set_index(LSOA_CODE_COL).geometry).area
+    # Convert raw counts to a percentage of LSOA area. The pixel counts live on
+    # the raster's (working) grid, so area is measured in the *same* CRS — not the
+    # boundary CRS — to keep the count/area density internally consistent.
+    if lsoa_gdf.crs is None:
+        logger.warning(
+            "LSOA boundary has no CRS; assuming it is already in the raster CRS "
+            f"({raster_crs}). Areas (and so the change percentages) will be wrong "
+            "if it is not — set a CRS on the boundary to be safe."
+        )
+    lsoa_in_raster_crs = (
+        lsoa_gdf.to_crs(raster_crs)
+        if lsoa_gdf.crs is not None and lsoa_gdf.crs != raster_crs
+        else lsoa_gdf
+    )
+    area_by_code = cast("gpd.GeoSeries", lsoa_in_raster_crs.set_index(LSOA_CODE_COL).geometry).area
     areas = area_by_code.reindex(codes).to_numpy()
     for column in lsoa_changes.columns:
         lsoa_changes[column] = (lsoa_changes[column] / areas) * 100

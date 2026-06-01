@@ -36,12 +36,14 @@ N_THRESHOLDS = 30
 
 
 def default_thresholds() -> np.ndarray:
-    """The 30 evenly spaced (integer) change thresholds swept in the ablation.
+    """The 30 evenly spaced reflectance-difference thresholds swept (100..800).
 
-    Integers so they match the ``_<threshold>`` column suffixes exactly (a float
-    like 124.13 would never match a ``..._124`` column).
+    Returned as floats (the values actually applied to the difference image);
+    the ``_<threshold>`` column/file suffix is the truncated integer label (see
+    :func:`gfs.change_detection.threshold_ablation.threshold_label`), and both
+    generation and :func:`evaluate_thresholds` truncate identically so they agree.
     """
-    return np.linspace(THRESHOLD_MIN, THRESHOLD_MAX, N_THRESHOLDS).round().astype(int)
+    return np.linspace(THRESHOLD_MIN, THRESHOLD_MAX, N_THRESHOLDS)
 
 
 def change_columns_for_threshold(df: pd.DataFrame, threshold: int) -> list[str]:
@@ -108,6 +110,8 @@ def evaluate_thresholds(
     points: list[AblationPoint] = []
 
     for raw_threshold in sweep:
+        # Truncated integer label, matching threshold_ablation.threshold_label so
+        # the generated `_<label>` change columns are the ones selected here.
         threshold = int(raw_threshold)
         if not change_columns_for_threshold(df, threshold):
             raise ValueError(
