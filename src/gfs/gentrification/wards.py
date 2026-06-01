@@ -29,8 +29,6 @@ def aggregate_to_wards(
     """
     lookup = pd.read_csv(lookup_path)
     lookup.columns = [c.lower() for c in lookup.columns]
-    merged = lsoa_scores.merge(
-        lookup[[lsoa_col, ward_col]], on=lsoa_col, how="left"
-    )
+    merged = lsoa_scores.merge(lookup[[lsoa_col, ward_col]], on=lsoa_col, how="left")
     grouped = cast(pd.DataFrame, merged.groupby(ward_col)[list(value_cols)].mean())
     return grouped.reset_index()

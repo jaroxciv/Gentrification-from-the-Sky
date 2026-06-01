@@ -68,7 +68,7 @@ def _clean_code(text: str) -> list[str]:
 def convert(nb_path: Path, out_path: Path) -> None:
     nb = json.loads(nb_path.read_text(encoding="utf-8"))
     lines: list[str] = [
-        '"""Auto-extracted from ' + nb_path.name + '.',
+        '"""Auto-extracted from ' + nb_path.name + ".",
         "",
         "Linear dump of the original notebook (outputs removed, Colab/IPython",
         "cruft commented out). Reorganize from here into the gfs package.",

@@ -73,9 +73,7 @@ class FCSiamDiff(nn.Module):
     @staticmethod
     def _fuse(up: Tensor, skip: Tensor) -> Tensor:
         if up.shape[2:] != skip.shape[2:]:
-            up = F.interpolate(
-                up, size=skip.shape[2:], mode="bilinear", align_corners=False
-            )
+            up = F.interpolate(up, size=skip.shape[2:], mode="bilinear", align_corners=False)
         return torch.cat([up, skip], dim=1)
 
     def forward(self, x1: Tensor, x2: Tensor) -> Tensor:

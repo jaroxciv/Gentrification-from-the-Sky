@@ -39,9 +39,7 @@ from gfs.config import (
 )
 
 
-def _linear_decay_scheduler(
-    optimizer: optim.Optimizer, max_epochs: int
-) -> LambdaLR:
+def _linear_decay_scheduler(optimizer: optim.Optimizer, max_epochs: int) -> LambdaLR:
     """The notebook's ``1 - epoch/(max_epochs+1)`` linear lr decay."""
     return LambdaLR(optimizer, lr_lambda=lambda epoch: 1.0 - epoch / float(max_epochs + 1))
 

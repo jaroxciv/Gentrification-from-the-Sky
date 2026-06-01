@@ -88,9 +88,7 @@ def missing_data_mask(path: str, band: int) -> np.ndarray:
         return (data == src.nodata).astype(int)
 
 
-def combined_missing_mask(
-    earlier_path: str, later_path: str, band: int
-) -> np.ndarray:
+def combined_missing_mask(earlier_path: str, later_path: str, band: int) -> np.ndarray:
     """Union of the two years' missing-data masks for one band.
 
     A pixel is flagged whenever it is missing in *either* year (the

@@ -107,9 +107,7 @@ def list_change_files(changes_dir: str) -> list[str]:
     number, which is the second-to-last underscore-delimited token.
     """
     change_files = [
-        os.path.join(changes_dir, x)
-        for x in os.listdir(changes_dir)
-        if x.endswith(".tiff")
+        os.path.join(changes_dir, x) for x in os.listdir(changes_dir) if x.endswith(".tiff")
     ]
     return sorted(change_files, key=lambda x: int(x.split("_")[-2]))
 
@@ -129,9 +127,7 @@ def aggregate_changes_to_lsoa(
     cfg = config or AggregationConfig()
     sorted_file_paths = list_change_files(changes_dir)
 
-    lsoa_changes = cast(
-        "pd.DataFrame", lsoa_gdf[[LSOA_CODE_COL]].copy()
-    ).set_index(LSOA_CODE_COL)
+    lsoa_changes = cast("pd.DataFrame", lsoa_gdf[[LSOA_CODE_COL]].copy()).set_index(LSOA_CODE_COL)
 
     n_jobs = cfg.n_jobs
     if n_jobs <= 0:
@@ -139,8 +135,7 @@ def aggregate_changes_to_lsoa(
     results = cast(
         "list[pd.Series]",
         Parallel(n_jobs=n_jobs)(
-            delayed(count_change_pixels)(change_file, lsoa_gdf)
-            for change_file in sorted_file_paths
+            delayed(count_change_pixels)(change_file, lsoa_gdf) for change_file in sorted_file_paths
         ),
     )
 
@@ -173,10 +168,7 @@ def create_percentage_features(
         layer_gdf["geometry"] = layer_gdf["geometry"].buffer(0)
         out[layer_name] = out.geometry.apply(
             lambda geom, layer=layer_gdf: (
-                layer.intersection(geom).area.sum() / geom.area
+                (layer.intersection(geom).area.sum() / geom.area) * 100 if geom.area > 0 else 0.0
             )
-            * 100
-            if geom.area > 0
-            else 0.0
         )
     return out

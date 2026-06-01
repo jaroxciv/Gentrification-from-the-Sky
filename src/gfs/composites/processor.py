@@ -103,9 +103,7 @@ def mask_s2_clouds(image: ee.Image) -> ee.Image:
     units (divide by 10000) so the median composite is in reflectance.
     """
     qa = image.select("QA60")
-    clear = (
-        qa.bitwiseAnd(_QA60_CLOUD_BIT).eq(0).And(qa.bitwiseAnd(_QA60_CIRRUS_BIT).eq(0))
-    )
+    clear = qa.bitwiseAnd(_QA60_CLOUD_BIT).eq(0).And(qa.bitwiseAnd(_QA60_CIRRUS_BIT).eq(0))
     return image.updateMask(clear).divide(10000).copyProperties(image, ["system:time_start"])
 
 

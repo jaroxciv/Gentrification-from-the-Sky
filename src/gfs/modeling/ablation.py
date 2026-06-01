@@ -102,9 +102,7 @@ def evaluate_thresholds(
 
     for raw_threshold in sweep:
         threshold = int(raw_threshold)
-        predictors = threshold_predictors(
-            df, threshold, planning_predictors=planning_predictors
-        )
+        predictors = threshold_predictors(df, threshold, planning_predictors=planning_predictors)
 
         x = cast("pd.DataFrame", df[predictors])
         y = cast("pd.Series", df[target])

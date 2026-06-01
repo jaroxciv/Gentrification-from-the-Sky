@@ -39,11 +39,21 @@ CENSUS_T2 = 2021
 
 # Sentinel-2 summer window with fewest clouds over London (paper §3.2).
 COMPOSITE_MONTH_START = 6  # June 1st
-COMPOSITE_MONTH_END = 8    # August 31st
+COMPOSITE_MONTH_END = 8  # August 31st
 
 # All 11 Sentinel-2 bands used, resampled to a uniform 10 m resolution.
 SENTINEL2_BANDS = (
-    "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B11", "B12",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+    "B8A",
+    "B11",
+    "B12",
 )
 TARGET_RESOLUTION_M = 10
 
@@ -69,7 +79,7 @@ RANDOM_STATE = 42
 # --- Change-detection training (paper §3.4) ----------------------------------
 CD_LEARNING_RATE = 1e-3
 CD_BATCH_SIZE = 8
-CD_EPOCHS = 1            # one-shot Siamese learning...
+CD_EPOCHS = 1  # one-shot Siamese learning...
 CD_EPOCHS_RESNET = 100  # ...except the customized Res-Net.
 
 # Canonical change-detection methods compared in the paper (§3.3).

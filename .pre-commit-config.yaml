@@ -1,0 +1,23 @@
+# Run `uv run pre-commit install` once to enable these on every commit.
+# (`pre-commit` is provided by the dev dependency group.)
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.0
+    hooks:
+      - id: ruff           # lint
+        args: [--fix]
+      - id: ruff-format    # format
+
+  - repo: https://github.com/kynan/nbstripout
+    rev: 0.8.1
+    hooks:
+      - id: nbstripout     # keep notebooks output-free (repo claims this)
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-added-large-files
+        args: [--maxkb=2000]

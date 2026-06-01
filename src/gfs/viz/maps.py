@@ -177,9 +177,7 @@ def plot_conservation_areas_with_changes(
     """
     if conservation_gdf.crs is None or "unknown" in str(conservation_gdf.crs):
         conservation_gdf = conservation_gdf.set_crs("EPSG:27700")
-    conservation_gdf = cast(
-        "gpd.GeoDataFrame", conservation_gdf[conservation_gdf.is_valid]
-    )
+    conservation_gdf = cast("gpd.GeoDataFrame", conservation_gdf[conservation_gdf.is_valid])
 
     lsoa_gdf = lsoa_gdf.to_crs(TARGET_CRS)
     boroughs_gdf = boroughs_gdf.to_crs(TARGET_CRS)
@@ -190,9 +188,7 @@ def plot_conservation_areas_with_changes(
     )
 
     with rasterio.open(changes_path) as src_changes:
-        masked, changes_transform = mask(
-            src_changes, boroughs_gdf.geometry, crop=True
-        )
+        masked, changes_transform = mask(src_changes, boroughs_gdf.geometry, crop=True)
     changes = masked[0]
 
     fig, ax = plt.subplots(1, 1, figsize=figsize)
@@ -268,9 +264,7 @@ def plot_gentrification_probabilities(
         )
         fig, ax = plt.subplots(1, 1, figsize=cfg.figsize)
         borough_lsoas.boundary.plot(ax=ax, linewidth=1, color="black")
-        borough_lsoas.plot(
-            column=cfg.probability_column, cmap=cfg.cmap, ax=ax, legend=True
-        )
+        borough_lsoas.plot(column=cfg.probability_column, cmap=cfg.cmap, ax=ax, legend=True)
 
         layer_patches: list[Patch] = []
         for layer_name in cfg.layers_to_visualize:

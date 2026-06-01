@@ -39,9 +39,7 @@ def _import_cv2() -> Any:
 
 
 # --- SiROC -------------------------------------------------------------------
-def _obtain_change_map(
-    pre: Tensor, post: Tensor, neighborhood: int, excluded: int = 0
-) -> Tensor:
+def _obtain_change_map(pre: Tensor, post: Tensor, neighborhood: int, excluded: int = 0) -> Tensor:
     """Spatial-context change map for a pre/post pair (SiROC core, verbatim)."""
     b, c, h_pre, w_pre = pre.shape
     _, _, h_post, w_post = post.shape
@@ -49,7 +47,9 @@ def _obtain_change_map(
     padded_pre = torch.zeros((b, c, h_pre + 2 * neighborhood, w_pre + 2 * neighborhood))
     padded_pre[:, :, neighborhood : h_pre + neighborhood, neighborhood : w_pre + neighborhood] = pre
     padded_post = torch.zeros((b, c, h_pre + 2 * neighborhood, w_pre + 2 * neighborhood))
-    padded_post[:, :, neighborhood : h_post + neighborhood, neighborhood : w_post + neighborhood] = post
+    padded_post[
+        :, :, neighborhood : h_post + neighborhood, neighborhood : w_post + neighborhood
+    ] = post
 
     pre_response = padded_pre**2
     post_response = padded_pre * padded_post
@@ -247,9 +247,7 @@ class DiffFPN(nn.Module):
         super().__init__()
         self.lateral_convs: nn.ModuleList = nn.ModuleList(
             [
-                ContextGuidedBlock(
-                    cur_channels[i] * 2, mid_ch * 2**i, dilations[i], reductions[i]
-                )
+                ContextGuidedBlock(cur_channels[i] * 2, mid_ch * 2**i, dilations[i], reductions[i])
                 for i in range(4)
             ]
         )
@@ -263,15 +261,11 @@ class DiffFPN(nn.Module):
         )
         self.diff_convs: nn.ModuleList = nn.ModuleList(
             [
-                ContextGuidedBlock(
-                    mid_ch * (3 * 2**i), mid_ch * 2**i, dilations[i], reductions[i]
-                )
+                ContextGuidedBlock(mid_ch * (3 * 2**i), mid_ch * 2**i, dilations[i], reductions[i])
                 for i in range(3)
             ]
             + [
-                ContextGuidedBlock(
-                    mid_ch * (3 * 2**i), mid_ch * 2**i, dilations[i], reductions[i]
-                )
+                ContextGuidedBlock(mid_ch * (3 * 2**i), mid_ch * 2**i, dilations[i], reductions[i])
                 for i in range(2)
             ]
             + [ContextGuidedBlock(mid_ch * 3, mid_ch * 2, dilations[0], reductions[0])]
@@ -287,8 +281,7 @@ class DiffFPN(nn.Module):
             tmp[i - 1] = tmp[i - 1] + self.up2x(self.top_down_convs[3 - i](tmp[i]))
 
         tmp = [
-            self.diff_convs[i](torch.cat([tmp[i], self.up2x(tmp[i + 1])], dim=1))
-            for i in (0, 1, 2)
+            self.diff_convs[i](torch.cat([tmp[i], self.up2x(tmp[i + 1])], dim=1)) for i in (0, 1, 2)
         ]
         x0_1 = tmp[0]
 

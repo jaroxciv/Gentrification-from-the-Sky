@@ -38,9 +38,7 @@ class PixelwiseLinear(Module):
             *[
                 Sequential(
                     Conv2d(fin[i], fout[i], kernel_size=1, bias=True),
-                    PReLU()
-                    if i < n - 1 or last_activation is None
-                    else last_activation,
+                    PReLU() if i < n - 1 or last_activation is None else last_activation,
                 )
                 for i in range(n)
             ]
@@ -91,11 +89,7 @@ class MixingMaskAttentionBlock(Module):
         z_mix = self._mixing(x, y)
         z = self._linear(z_mix)
         z_mix_out = 0 if self._mixing_out is None else self._mixing_out(x, y)
-        return (
-            z
-            if self._final_normalization is None
-            else self._final_normalization(z_mix_out * z)
-        )
+        return z if self._final_normalization is None else self._final_normalization(z_mix_out * z)
 
 
 class UpMask(Module):
@@ -274,9 +268,7 @@ class TinyCD(Module):
             upping = self._up[-i - 1](upping, features[-i - 1])
         return upping
 
-    def configure_optimizers(
-        self, max_epochs: int, lr: float
-    ) -> tuple[optim.Optimizer, LambdaLR]:
+    def configure_optimizers(self, max_epochs: int, lr: float) -> tuple[optim.Optimizer, LambdaLR]:
         """SGD + linear lr decay (the TinyCD reference schedule)."""
 
         def lambda_rule(epoch: int) -> float:

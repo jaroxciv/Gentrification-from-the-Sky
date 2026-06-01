@@ -137,9 +137,7 @@ def reconstruct_image(
 
 def resize_to_match(target: Tensor, reference: Tensor) -> Tensor:
     """Bilinearly resize ``target`` to ``reference``'s spatial size."""
-    return F.interpolate(
-        target, size=reference.shape[2:], mode="bilinear", align_corners=False
-    )
+    return F.interpolate(target, size=reference.shape[2:], mode="bilinear", align_corners=False)
 
 
 def resize_features(features: FloatArray, target_shape: tuple[int, int]) -> FloatArray:
@@ -150,9 +148,7 @@ def resize_features(features: FloatArray, target_shape: tuple[int, int]) -> Floa
     needed and the result matches ``align_corners=False`` bilinear sampling.
     """
     tensor = torch.from_numpy(np.ascontiguousarray(features)).unsqueeze(0).float()
-    resized = F.interpolate(
-        tensor, size=target_shape, mode="bilinear", align_corners=False
-    )
+    resized = F.interpolate(tensor, size=target_shape, mode="bilinear", align_corners=False)
     return resized.squeeze(0).numpy().astype(np.float64)
 
 
@@ -170,9 +166,7 @@ class DiceLoss(nn.Module):
         flat_inputs = inputs.view(-1)
         flat_targets = targets.view(-1)
         intersection = (flat_inputs * flat_targets).sum()
-        dice = (2.0 * intersection + smooth) / (
-            flat_inputs.sum() + flat_targets.sum() + smooth
-        )
+        dice = (2.0 * intersection + smooth) / (flat_inputs.sum() + flat_targets.sum() + smooth)
         return 1 - dice
 
 
@@ -182,9 +176,7 @@ def mse_loss() -> nn.MSELoss:
 
 
 # --- Thresholding (skimage) --------------------------------------------------
-def segment_image(
-    binary_image: npt.NDArray[np.bool_], min_size: int = 10
-) -> npt.NDArray[np.int_]:
+def segment_image(binary_image: npt.NDArray[np.bool_], min_size: int = 10) -> npt.NDArray[np.int_]:
     """Label connected components and zero out regions smaller than ``min_size``."""
     labeled_image = cast("npt.NDArray[np.int_]", label(binary_image))
     for region in regionprops(labeled_image):
@@ -214,15 +206,11 @@ def apply_thresholding_strategy(
     Small objects under ``min_size`` are removed; optionally a connected-component
     ``segment`` pass drops blobs under ``segment_min_size``.
     """
-    cd_map: npt.NDArray[np.bool_] = np.zeros(
-        detected_change_map_normalized.shape, dtype=bool
-    )
+    cd_map: npt.NDArray[np.bool_] = np.zeros(detected_change_map_normalized.shape, dtype=bool)
 
     if strategy == "adaptive":
         for sigma in range(101, 202, 50):
-            adaptive_threshold = 2 * filters.gaussian(
-                detected_change_map_normalized, sigma
-            )
+            adaptive_threshold = 2 * filters.gaussian(detected_change_map_normalized, sigma)
             cd_map_temp = detected_change_map_normalized > adaptive_threshold
             cd_map_temp = morphology.remove_small_objects(cd_map_temp, min_size=min_size)
             cd_map = cd_map | cd_map_temp

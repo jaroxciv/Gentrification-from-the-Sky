@@ -90,9 +90,7 @@ def siamese_band_change_map(
             )
             change_patches.append(resized_output.cpu().numpy().squeeze())
 
-    change_map = reconstruct_image(
-        np.array(change_patches), im1_band.shape, patch_size, stride
-    )
+    change_map = reconstruct_image(np.array(change_patches), im1_band.shape, patch_size, stride)
     return normalize01(change_map)
 
 
@@ -226,12 +224,8 @@ def extract_and_save_features(
                 change_map = resnet_band_change_map(model, single1, single2, device=device)
         else:
             with ClearCache():
-                change_map = siamese_band_change_map(
-                    model, im1, im2, band, device=device
-                )
+                change_map = siamese_band_change_map(model, im1, im2, band, device=device)
         written.append(
-            threshold_and_save_band(
-                change_map, band, model_name, image2_path, output_dir
-            )
+            threshold_and_save_band(change_map, band, model_name, image2_path, output_dir)
         )
     return written

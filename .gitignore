@@ -41,3 +41,6 @@ _staging/
 Thumbs.db
 .vscode/
 .idea/
+
+# Local agent/editor tooling
+.serena/

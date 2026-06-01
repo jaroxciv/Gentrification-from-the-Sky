@@ -52,6 +52,7 @@ def build_pipeline(estimator: ClassifierMixin) -> Pipeline:
         ]
     )
 
+
 # Metrics reported for every model (paper §4.3).
 SCORING = ("balanced_accuracy", "f1_weighted", "roc_auc")
 
@@ -178,9 +179,7 @@ def repeated_cv_metrics(
     of :data:`SCORING`. ROC-AUC is skipped for estimators without a probability
     output (e.g. plain LinearSVC).
     """
-    cv = RepeatedStratifiedKFold(
-        n_splits=n_splits, n_repeats=n_repeats, random_state=random_state
-    )
+    cv = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=random_state)
     metrics: dict[str, float] = {}
     for metric in SCORING:
         if metric == "roc_auc" and spec.needs_decision_function:
@@ -227,9 +226,7 @@ def train_and_evaluate(
     specs = cfg.specs if cfg.specs is not None else default_model_specs(y)
     results: list[ModelResult] = []
     for spec in specs:
-        tuned = grid_search(
-            spec, X, y, scoring=cfg.grid_scoring, cv_folds=cfg.grid_cv_folds
-        )
+        tuned = grid_search(spec, X, y, scoring=cfg.grid_scoring, cv_folds=cfg.grid_cv_folds)
         metrics = repeated_cv_metrics(
             spec,
             tuned.estimator,
@@ -239,9 +236,7 @@ def train_and_evaluate(
             n_repeats=cfg.repeated_cv_repeats,
             random_state=cfg.random_state,
         )
-        results.append(
-            ModelResult(name=spec.name, best_params=tuned.best_params, metrics=metrics)
-        )
+        results.append(ModelResult(name=spec.name, best_params=tuned.best_params, metrics=metrics))
     return results
 
 

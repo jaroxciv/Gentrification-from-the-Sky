@@ -55,9 +55,7 @@ def build(src: Sources) -> None:
         print(f"Downloaded {year} composite -> {raw_path}")
 
         # Clip + merge into the aligned per-year composite (averaging overlaps).
-        merged = clip_merge.clip_and_merge_year(
-            [raw_path], boundary, year, average_overlaps=True
-        )
+        merged = clip_merge.clip_and_merge_year([raw_path], boundary, year, average_overlaps=True)
         if merged is not None:
             merged_paths[year] = merged
             print(f"Merged {year} composite -> {merged}")
@@ -68,8 +66,7 @@ def build(src: Sources) -> None:
         print("\nPer-band statistics (later composite):")
         print(stats.band_statistics(pair.later))
         diff = stats.masked_difference(pair)
-        print(f"\nDifference computed: shape {diff.shape}, "
-              f"{int(diff.count())} valid pixels.")
+        print(f"\nDifference computed: shape {diff.shape}, {int(diff.count())} valid pixels.")
 
 
 if __name__ == "__main__":

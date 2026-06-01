@@ -73,9 +73,7 @@ def neighborhood_index(
     """
     out = df.copy()
     for tp, out_col in ((1, COLS.index_t1), (2, COLS.index_t2)):
-        out[out_col] = sum(
-            w * out[f"t{tp}_{m}"] for w, m in zip(weights, MEASURES, strict=True)
-        )
+        out[out_col] = sum(w * out[f"t{tp}_{m}"] for w, m in zip(weights, MEASURES, strict=True))
     return out
 
 

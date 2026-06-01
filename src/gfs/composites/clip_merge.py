@@ -97,9 +97,7 @@ def clip_tiles(
     clipped: list[str] = []
     for tile_path in tile_paths:
         out_path = os.path.join(output_dir, f"clipped_{os.path.basename(tile_path)}")
-        clip_raster_to_boundary(
-            tile_path, boundary_gdf, out_path, skip_existing=skip_existing
-        )
+        clip_raster_to_boundary(tile_path, boundary_gdf, out_path, skip_existing=skip_existing)
         clipped.append(out_path)
     return clipped
 
@@ -206,9 +204,7 @@ def clip_and_merge_year(
     clipped_dir = clipped_dir or str(COMPOSITES_DIR.parent / f"clipped_{year}")
     out_path = out_path or str(COMPOSITES_DIR / f"clipped_merged_{year}.tiff")
 
-    clipped = clip_tiles(
-        tile_paths, boundary_gdf, clipped_dir, skip_existing=skip_existing
-    )
+    clipped = clip_tiles(tile_paths, boundary_gdf, clipped_dir, skip_existing=skip_existing)
     merge = merge_tiles_average if average_overlaps else merge_tiles_mosaic
     return merge(clipped, out_path, skip_existing=skip_existing)
 

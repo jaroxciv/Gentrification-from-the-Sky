@@ -160,16 +160,12 @@ class FeatureExtractor(nn.Module):
     def forward(self, input: Tensor) -> Tensor:
         return self.model(input)
 
-    def configure_optimizers(
-        self, max_epochs: int, lr: float
-    ) -> tuple[optim.Optimizer, LambdaLR]:
+    def configure_optimizers(self, max_epochs: int, lr: float) -> tuple[optim.Optimizer, LambdaLR]:
         """SGD with the linear lr decay schedule the notebook used."""
 
         def lambda_rule(epoch: int) -> float:
             return 1.0 - epoch / float(max_epochs + 1)
 
-        optimizer = optim.SGD(
-            self.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4
-        )
+        optimizer = optim.SGD(self.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4)
         scheduler = LambdaLR(optimizer, lr_lambda=lambda_rule)
         return optimizer, scheduler

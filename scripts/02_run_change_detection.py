@@ -79,9 +79,7 @@ def run_simple_diff(comps: Composites) -> None:
     output_dir = features_output_dir("simple_diff")
     for band in bands:
         change_map = simple_diff_change_map(im1[band - 1], im2[band - 1])
-        threshold_and_save_band(
-            change_map, band, "simple_diff", str(comps.t2), output_dir
-        )
+        threshold_and_save_band(change_map, band, "simple_diff", str(comps.t2), output_dir)
 
 
 def run_resnet(comps: Composites, device: torch.device) -> None:

@@ -39,9 +39,7 @@ def build(src: Sources) -> None:
     s = str  # paths -> str for the loaders
     table = census.assemble(
         # Age: % aged 25–34.
-        age_t1=census.load_age(
-            s(src.age_2011), code_col="Area Codes", age_cols=("25-29", "30-34")
-        ),
+        age_t1=census.load_age(s(src.age_2011), code_col="Area Codes", age_cols=("25-29", "30-34")),
         age_t2=census.load_age(
             s(src.age_2021),
             code_col="LSOA Code",

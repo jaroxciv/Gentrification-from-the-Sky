@@ -162,11 +162,7 @@ def planning_predictors(
     ``not col.isupper()``, which silently swept in any lower-case metadata
     column such as ``lsoa_codes``).
     """
-    return [
-        c
-        for c in planning.columns
-        if c not in exclude and not c.startswith(SATELLITE_PREFIX)
-    ]
+    return [c for c in planning.columns if c not in exclude and not c.startswith(SATELLITE_PREFIX)]
 
 
 @dataclass

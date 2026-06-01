@@ -147,9 +147,7 @@ class CGNet(nn.Module):
         layer3 = self.conv_reduce_3(layer3)
         layer4 = self.conv_reduce_4(layer4)
 
-        layer4_1 = F.interpolate(
-            layer4, layer1.size()[2:], mode="bilinear", align_corners=True
-        )
+        layer4_1 = F.interpolate(layer4, layer1.size()[2:], mode="bilinear", align_corners=True)
         feature_fuse = layer4_1
 
         change_map = self.decoder(feature_fuse)

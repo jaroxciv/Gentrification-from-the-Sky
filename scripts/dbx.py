@@ -18,9 +18,7 @@ def get_client() -> dropbox.Dropbox:
     app_secret = os.environ.get("DROPBOX_APP_SECRET", "").strip()
     refresh_token = os.environ.get("DROPBOX_REFRESH_TOKEN", "").strip()
     if not (app_key and app_secret and refresh_token):
-        raise SystemExit(
-            "Missing credentials in .env. Run `uv run scripts/dropbox_auth.py` first."
-        )
+        raise SystemExit("Missing credentials in .env. Run `uv run scripts/dropbox_auth.py` first.")
     return dropbox.Dropbox(
         oauth2_refresh_token=refresh_token,
         app_key=app_key,

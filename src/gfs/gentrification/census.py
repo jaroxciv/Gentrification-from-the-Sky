@@ -111,9 +111,7 @@ def load_education_2011(
     """% with Level 4+ qualifications in 2011, reconciled onto 2011 LSOA codes."""
     df = pd.read_excel(xlsx_path, sheet_name=sheet)
     df["l4_perc"] = df[l4_col] / df[residents_col] * 100
-    reconciled = reconcile_lsoa(
-        df, lookup_path, source_code_col=code_col, lookup_from="lsoa21cd"
-    )
+    reconciled = reconcile_lsoa(df, lookup_path, source_code_col=code_col, lookup_from="lsoa21cd")
     sub = cast(pd.DataFrame, reconciled[[LSOA_CODE, "l4_perc"]])
     return sub.rename(columns={"l4_perc": "value"})
 
@@ -154,9 +152,7 @@ def load_imd2010_column(
     """
     df = pd.read_csv(csv_path)
     df.columns = [c.lower() for c in df.columns]
-    reconciled = reconcile_lsoa(
-        df, lookup_path, source_code_col=code_col, lookup_from="lsoa01cd"
-    )
+    reconciled = reconcile_lsoa(df, lookup_path, source_code_col=code_col, lookup_from="lsoa01cd")
     sub = cast(pd.DataFrame, reconciled[[LSOA_CODE, column.lower()]])
     return sub.rename(columns={column.lower(): "value"})
 
@@ -180,10 +176,14 @@ def assemble(
     t1_income, t2_income``.
     """
     pieces = {
-        "t1_age": age_t1, "t2_age": age_t2,
-        "t1_edu": edu_t1, "t2_edu": edu_t2,
-        "t1_house": house_t1, "t2_house": house_t2,
-        "t1_income": income_t1, "t2_income": income_t2,
+        "t1_age": age_t1,
+        "t2_age": age_t2,
+        "t1_edu": edu_t1,
+        "t2_edu": edu_t2,
+        "t1_house": house_t1,
+        "t2_house": house_t2,
+        "t1_income": income_t1,
+        "t2_income": income_t2,
     }
     out: pd.DataFrame | None = None
     for col, frame in pieces.items():

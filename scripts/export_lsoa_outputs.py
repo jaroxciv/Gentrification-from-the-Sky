@@ -35,17 +35,24 @@ SCORE_COLUMNS = [
     "LSOA11CD",
     "LSOA11NM",
     "LAD11NM",  # borough, for reference
-    "t1_age_perc", "t3_age_perc",
-    "t1_edu_perc", "t3_edu_perc",
-    "t1_house_perc", "t3_house_perc",
-    "t1_income_perc", "t3_income_perc",
-    "neighborhood_index_t1", "neighborhood_index_t3",
+    "t1_age_perc",
+    "t3_age_perc",
+    "t1_edu_perc",
+    "t3_edu_perc",
+    "t1_house_perc",
+    "t3_house_perc",
+    "t1_income_perc",
+    "t3_income_perc",
+    "neighborhood_index_t1",
+    "neighborhood_index_t3",
     "disadvantaged",
     "gentrification_score",
 ]
 
 
-def add_binary_label(gdf: gpd.GeoDataFrame, score_col: str = "gentrification_score") -> gpd.GeoDataFrame:
+def add_binary_label(
+    gdf: gpd.GeoDataFrame, score_col: str = "gentrification_score"
+) -> gpd.GeoDataFrame:
     """Add a `gentrified` column: 1 above Q75, 0 below Q25, NaN in between."""
     q25 = gdf[score_col].quantile(0.25)
     q75 = gdf[score_col].quantile(0.75)
