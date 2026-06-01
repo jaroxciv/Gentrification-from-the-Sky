@@ -208,6 +208,15 @@ wheels = [
 ]
 
 [[package]]
+name = "cachetools"
+version = "7.1.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f4/8b/0d3945a13955303b81272f759a0331e54c5c793da455e6f5706b89d2639c/cachetools-7.1.4.tar.gz", hash = "sha256:437f55a4e0c1b01a4f3077cc470e6991d47430970e36fbcb77e2be0df4fc1cd6", size = 40085, upload-time = "2026-05-21T22:40:43.376Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8c/7b/1fc1c09cc0756cf25861a3be10565915953876da48bb228fb9a672b20a42/cachetools-7.1.4-py3-none-any.whl", hash = "sha256:323dc4127934744db5b54eb4924482d7edafbf9554e820d1531c2e08c0e4ef54", size = 16761, upload-time = "2026-05-21T22:40:41.845Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.5.20"
 source = { registry = "https://pypi.org/simple" }
@@ -364,6 +373,15 @@ wheels = [
 ]
 
 [[package]]
+name = "cloudpickle"
+version = "3.1.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/27/fb/576f067976d320f5f0114a8d9fa1215425441bb35627b1993e5afd8111e5/cloudpickle-3.1.2.tar.gz", hash = "sha256:7fda9eb655c9c230dab534f1983763de5835249750e85fbcef43aaa30a9a2414", size = 22330, upload-time = "2025-11-03T09:25:26.604Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/88/39/799be3f2f0f38cc727ee3b4f1445fe6d5e4133064ec2e4115069418a5bb6/cloudpickle-3.1.2-py3-none-any.whl", hash = "sha256:9acb47f6afd73f60dc1df93bb801b472f05ff42fa6c84167d25cb206be1fbf4a", size = 22228, upload-time = "2025-11-03T09:25:25.534Z" },
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -515,6 +533,29 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a9/95/a3dbbb5028f35eafb79008e7522a75244477d2838f38cbb722248dabc2a8/cycler-0.12.1.tar.gz", hash = "sha256:88bb128f02ba341da8ef447245a9e138fae777f6a23943da4540077d3601eb1c", size = 7615, upload-time = "2023-10-07T05:32:18.335Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e7/05/c19819d5e3d95294a6f5947fb9b9629efb316b96de511b418c53d245aae6/cycler-0.12.1-py3-none-any.whl", hash = "sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30", size = 8321, upload-time = "2023-10-07T05:32:16.783Z" },
+]
+
+[[package]]
+name = "dask"
+version = "2026.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "cloudpickle" },
+    { name = "fsspec" },
+    { name = "packaging" },
+    { name = "partd" },
+    { name = "pyyaml" },
+    { name = "toolz" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/d7/2a/5d8cc1579590af86576dde890254440e478c7174b93a02095ecfc2e6ba38/dask-2026.3.0.tar.gz", hash = "sha256:f7d96c8274e8a900d217c1ff6ea8d1bbf0b4c2c21e74a409644498d925eb8f85", size = 11000710, upload-time = "2026-03-18T07:10:14.945Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4a/f3/00bb1e867fba351e2d784170955713bee200c43ea306c59f30bd7e748192/dask-2026.3.0-py3-none-any.whl", hash = "sha256:be614b9242b0b38288060fb2d7696125946469c98a1c30e174883fd199e0428d", size = 1485630, upload-time = "2026-03-18T07:10:12.832Z" },
+]
+
+[package.optional-dependencies]
+array = [
+    { name = "numpy" },
 ]
 
 [[package]]
@@ -838,9 +879,11 @@ dependencies = [
     { name = "loguru" },
     { name = "matplotlib" },
     { name = "numpy" },
+    { name = "odc-stac" },
     { name = "openpyxl" },
     { name = "pandas" },
     { name = "pyproj" },
+    { name = "pystac-client" },
     { name = "python-dotenv" },
     { name = "rasterio" },
     { name = "rich" },
@@ -888,9 +931,11 @@ requires-dist = [
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "matplotlib", specifier = ">=3.9" },
     { name = "numpy", specifier = ">=2.0" },
+    { name = "odc-stac", specifier = ">=0.5.2" },
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "pandas", specifier = ">=2.2" },
     { name = "pyproj", specifier = ">=3.6" },
+    { name = "pystac-client", specifier = ">=0.9.0" },
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "rasterio", specifier = ">=1.3" },
     { name = "rich", specifier = ">=15.0.0" },
@@ -1449,6 +1494,15 @@ wheels = [
 ]
 
 [[package]]
+name = "locket"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/2f/83/97b29fe05cb6ae28d2dbd30b81e2e402a3eed5f460c26e9eaa5895ceacf5/locket-1.0.0.tar.gz", hash = "sha256:5c0d4c052a8bbbf750e056a8e65ccd309086f4f0f18a2eac306a8dfa4112a632", size = 4350, upload-time = "2022-04-20T22:04:44.312Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/db/bc/83e112abc66cd466c6b83f99118035867cecd41802f8d044638aa78a106e/locket-1.0.0-py2.py3-none-any.whl", hash = "sha256:b6c819a722f7b6bd955b80781788e4a66a55628b858d347536b7e81325a3a5e3", size = 4398, upload-time = "2022-04-20T22:04:42.23Z" },
+]
+
+[[package]]
 name = "loguru"
 version = "0.7.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1825,6 +1879,62 @@ wheels = [
 ]
 
 [[package]]
+name = "odc-geo"
+version = "0.5.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "affine" },
+    { name = "cachetools" },
+    { name = "numpy" },
+    { name = "pyproj" },
+    { name = "shapely" },
+    { name = "xarray" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f3/75/08d98726a056d3e2c885e5119f0a2fb86c0cbf9495294407b9bc28bab9a1/odc_geo-0.5.1.tar.gz", hash = "sha256:de157e850c7a523807454fe161d69af480a2a5416367f8626039cf173cf919fa", size = 145454, upload-time = "2026-03-10T00:58:02.837Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/93/70/2e3e716b3d3cc24e34f7cb7f3a4b9870e8f40fe5f4a33c8634bb680cc382/odc_geo-0.5.1-py3-none-any.whl", hash = "sha256:3ecec8d926ae505c756d9daacd612bab8b34b13269f3b0bdb97983d39cfbee3b", size = 159044, upload-time = "2026-03-10T00:58:00.888Z" },
+]
+
+[[package]]
+name = "odc-loader"
+version = "0.6.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "dask", extra = ["array"] },
+    { name = "numpy" },
+    { name = "odc-geo" },
+    { name = "rasterio" },
+    { name = "typing-extensions" },
+    { name = "xarray" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a5/01/97e644a936329a31b551b2e480eb40f6f807da1bd1355f45ca3c77014db3/odc_loader-0.6.4.tar.gz", hash = "sha256:bef95deaa4b46c4c73bb359d3a2beca37fb4300f87bc4b12e7b6d646433fd267", size = 48888, upload-time = "2026-01-14T01:21:03.073Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8e/8f/22b0a79e458392e377a9784cc93e1bd6aaa3f908d52969a81e0c56e6b59d/odc_loader-0.6.4-py3-none-any.whl", hash = "sha256:3f936841c253535fdb35fb803579e40e5f438d2fa893596004287143817cfee0", size = 58610, upload-time = "2026-01-14T01:21:01.867Z" },
+]
+
+[[package]]
+name = "odc-stac"
+version = "0.5.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "affine" },
+    { name = "dask", extra = ["array"] },
+    { name = "numpy" },
+    { name = "odc-geo" },
+    { name = "odc-loader" },
+    { name = "pandas" },
+    { name = "pystac" },
+    { name = "rasterio" },
+    { name = "toolz" },
+    { name = "typing-extensions" },
+    { name = "xarray" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/00/3a/7d7ad9deb2fb612bb42f6499ca49b7bdd8850e4d2189b974ca521d2e93aa/odc_stac-0.5.2.tar.gz", hash = "sha256:ab5969805e843be072c3bf2886b383b9a6101ab556d91bfc83377a87455c6028", size = 116539, upload-time = "2026-01-19T05:00:49.409Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/01/8a/fd93f13a9b4b688b5ac8c8ec14ed6401db99166b7d55c41c9c96250398d9/odc_stac-0.5.2-py3-none-any.whl", hash = "sha256:acb15b7dd26771fdcdf4f93b1e070e14748fad6d18c572e6710f8ca5d6c78073", size = 43969, upload-time = "2026-01-19T05:00:46.51Z" },
+]
+
+[[package]]
 name = "openpyxl"
 version = "3.1.5"
 source = { registry = "https://pypi.org/simple" }
@@ -1896,6 +2006,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/30/4b/90c937815137d43ce71ba043cd3566221e9df6b9c805f24b5d138c9d40a7/parso-0.8.7.tar.gz", hash = "sha256:eaaac4c9fdd5e9e8852dc778d2d7405897ec510f2a298071453e5e3a07914bb1", size = 401824, upload-time = "2026-05-01T23:13:02.138Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/99/5d/8268b644392ee874ee82a635cd0df1773de230bde356c38de28e298392cc/parso-0.8.7-py2.py3-none-any.whl", hash = "sha256:a8926eb2a1b915486941fdbd31e86a4baf88fe8c210f25f2f35ecec5b574ca1c", size = 107025, upload-time = "2026-05-01T23:12:58.867Z" },
+]
+
+[[package]]
+name = "partd"
+version = "1.4.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "locket" },
+    { name = "toolz" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b2/3a/3f06f34820a31257ddcabdfafc2672c5816be79c7e353b02c1f318daa7d4/partd-1.4.2.tar.gz", hash = "sha256:d022c33afbdc8405c226621b015e8067888173d85f7f5ecebb3cafed9a20f02c", size = 21029, upload-time = "2024-05-06T19:51:41.945Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/71/e7/40fb618334dcdf7c5a316c0e7343c5cd82d3d866edc100d98e29bc945ecd/partd-1.4.2-py3-none-any.whl", hash = "sha256:978e4ac767ec4ba5b86c6eaa52e5a2a3bc748a2ca839e8cc798f1cc6ce6efb0f", size = 18905, upload-time = "2024-05-06T19:51:39.271Z" },
 ]
 
 [[package]]
@@ -2353,6 +2476,37 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/65/be/b3929ee96a45eb791b79be041e595a74fd18b35d066b8c99659a8ceb0725/pyshp-3.0.9.tar.gz", hash = "sha256:a49d85f2fae1d561dfc11039271aa4f9d5a377765d0a3cd8ad98172f0c6aff81", size = 2203033, upload-time = "2026-05-27T17:11:00.557Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/80/5f/010886558cde80f34f5eeef478a37004b97e3ac30281bd036f398ee342bd/pyshp-3.0.9-py3-none-any.whl", hash = "sha256:7d0ef9f5cef26ce3cea5099464a7b29f57fc169435c287663b6dbcc260c69ef9", size = 65766, upload-time = "2026-05-27T17:10:59.461Z" },
+]
+
+[[package]]
+name = "pystac"
+version = "1.14.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "python-dateutil" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/31/e6/efbc20dbc94ad7ed18fe11a4208103a509384ffcccd9bdc27953b725e686/pystac-1.14.3.tar.gz", hash = "sha256:24f92d6f301371859aa0abc1bbe7b1523a603e1184a6d139ecb323967c2c9bb3", size = 164205, upload-time = "2026-01-09T12:38:42.456Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ad/b4/a9430e72bfc3c458e1fcf8363890994e483052ab052ed93912be4e5b32c8/pystac-1.14.3-py3-none-any.whl", hash = "sha256:2f60005f521d541fb801428307098f223c14697b3faf4d2f0209afb6a43f39e5", size = 208506, upload-time = "2026-01-09T12:38:40.721Z" },
+]
+
+[package.optional-dependencies]
+validation = [
+    { name = "jsonschema" },
+]
+
+[[package]]
+name = "pystac-client"
+version = "0.9.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pystac", extra = ["validation"] },
+    { name = "python-dateutil" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c5/8d/b98aeffd325fc208e1624cf586d0c4dfb927bc7a2bce20d3b58ee80d2483/pystac_client-0.9.0.tar.gz", hash = "sha256:3908951583bcc6a3aaaf2828024a8e03764e6ca9d9f9f1d8149df587e14dd744", size = 52339, upload-time = "2025-07-18T15:44:41.1Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5d/d2/5f6367b14c9f250d1a6725d18bd1e9584f5ab1587e292f3a847e59189598/pystac_client-0.9.0-py3-none-any.whl", hash = "sha256:eed146b5980f93646aaa3a59080f11f1dcab6000b0bfbc28b1d0c6fd0a61eda1", size = 41826, upload-time = "2025-07-18T15:44:40.197Z" },
 ]
 
 [[package]]
@@ -2996,6 +3150,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b7/38/5e2ecef5af2f4fd4a89bb8d6240de9458bab4d51a4cbd97aeb3a0cd618e2/tifffile-2026.6.1.tar.gz", hash = "sha256:626c892c0e899d959b9438e7c0e1491dc154a7fead1f1f37a991724a50eceba9", size = 429694, upload-time = "2026-05-31T23:57:12.165Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/81/59/208f71d70ddc6184f79b8c6d87d46eb7d7b12c19186a817dec9c9c3f3693/tifffile-2026.6.1-py3-none-any.whl", hash = "sha256:0d7382d2769b855b81ce358528e2b40c16d48aa39031746efa81215205332a8d", size = 267108, upload-time = "2026-05-31T23:57:10.597Z" },
+]
+
+[[package]]
+name = "toolz"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/11/d6/114b492226588d6ff54579d95847662fc69196bdeec318eb45393b24c192/toolz-1.1.0.tar.gz", hash = "sha256:27a5c770d068c110d9ed9323f24f1543e83b2f300a687b7891c1a6d56b697b5b", size = 52613, upload-time = "2025-10-17T04:03:21.661Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fb/12/5911ae3eeec47800503a238d971e51722ccea5feb8569b735184d5fcdbc0/toolz-1.1.0-py3-none-any.whl", hash = "sha256:15ccc861ac51c53696de0a5d6d4607f99c210739caf987b5d2054f3efed429d8", size = 58093, upload-time = "2025-10-17T04:03:20.435Z" },
 ]
 
 [[package]]

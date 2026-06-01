@@ -58,23 +58,39 @@ def _planning_layer_paths(planning_dir: Path) -> dict[str, str]:
     }
 
 
-# --- X: composites (WASDI) --------------------------------------------------
-def run_composites(*, boundary: Path = DEFAULT_BOUNDARY, confirm_paid_run: bool = False) -> None:
-    """Regenerate the Sentinel-2 composites on WASDI for both years (paper §3.2).
+# --- X: composites ----------------------------------------------------------
+def run_composites(
+    *,
+    boundary: Path = DEFAULT_BOUNDARY,
+    source: str = "stac",
+    confirm_paid_run: bool = False,
+) -> None:
+    """Regenerate the Sentinel-2 composites for both study years (paper §3.2).
 
-    The composites already ship as data; this only rebuilds them. WASDI is a
-    licensed platform (arrange usage rights with the WASDI team) and runs metered
-    remote compute, so it is gated behind ``confirm_paid_run`` / ``--confirm``.
+    ``source="stac"`` (default) builds them from free, open COGs via a STAC API
+    (no account/quota). ``source="wasdi"`` reproduces the as-published route on
+    the licensed WASDI platform (arrange usage rights with the WASDI team) and is
+    gated behind ``confirm_paid_run`` / ``--confirm``. The composites already
+    ship as data; either path only rebuilds them.
     """
-    from gfs.composites import wasdi_source
+    if source == "stac":
+        from gfs.composites import stac_source
 
-    _stage("Composites (X) — WASDI", f"Sentinel-2 {YEAR_T1} & {YEAR_T2}")
-    for year in (YEAR_T1, YEAR_T2):
-        tiles = wasdi_source.build_average_composite(
-            str(boundary), year, confirm_paid_run=confirm_paid_run
-        )
-        console.print(f"  [green]✓[/] {year}: processed {len(tiles)} tile(s) on WASDI")
-    console.print("  Download the processed tiles, then clip/merge with gfs.composites.clip_merge.")
+        _stage("Composites (X) — STAC", f"Sentinel-2 {YEAR_T1} & {YEAR_T2}")
+        for year in (YEAR_T1, YEAR_T2):
+            out = stac_source.build_composite_stac(str(boundary), year)
+            console.print(f"  [green]✓[/] {year} -> {out}")
+    elif source == "wasdi":
+        from gfs.composites import wasdi_source
+
+        _stage("Composites (X) — WASDI", f"Sentinel-2 {YEAR_T1} & {YEAR_T2}")
+        for year in (YEAR_T1, YEAR_T2):
+            tiles = wasdi_source.build_average_composite(
+                str(boundary), year, confirm_paid_run=confirm_paid_run
+            )
+            console.print(f"  [green]✓[/] {year}: processed {len(tiles)} tile(s) on WASDI")
+    else:
+        raise ValueError(f"Unknown composites source: {source!r} (use 'stac' or 'wasdi')")
 
 
 # --- land cover (Google Earth Engine) ---------------------------------------
@@ -304,12 +320,15 @@ def run_export(model: str = "tinycd") -> Path:
 @app.command()
 def composites(
     boundary: Annotated[Path, typer.Option(help="LSOA boundary shapefile.")] = DEFAULT_BOUNDARY,
+    source: Annotated[
+        str, typer.Option("--source", help="Composite source: 'stac' (free) or 'wasdi'.")
+    ] = "stac",
     confirm: Annotated[
-        bool, typer.Option("--confirm", help="Confirm metered WASDI compute.")
+        bool, typer.Option("--confirm", help="Confirm metered WASDI compute (wasdi source).")
     ] = False,
 ) -> None:
-    """X — regenerate the Sentinel-2 composites on WASDI (already provided as data)."""
-    run_composites(boundary=boundary, confirm_paid_run=confirm)
+    """X — regenerate the Sentinel-2 composites (free STAC by default; already provided as data)."""
+    run_composites(boundary=boundary, source=source, confirm_paid_run=confirm)
 
 
 @app.command()

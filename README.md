@@ -83,7 +83,8 @@ The project ships a single CLI, **`gfs`** (run `uv run gfs --help` to see it):
 
 ```bash
 uv run scripts/fetch_data.py   # 0. get the datasets (see data/README.md)
-uv run gfs composites          # 1. X: Sentinel-2 composites (2016 & 2021)
+uv run gfs composites          # 1. X: Sentinel-2 composites (free STAC source by default)
+uv run gfs landcover           #    Dynamic World land cover (green areas) via Earth Engine
 uv run gfs change-detect       # 2. models: detect change -> per-band features
 uv run gfs gentrification      # 3. Y: census gentrification score
 uv run gfs model --model tinycd  # 4. predict gentrification
@@ -92,6 +93,13 @@ uv run gfs export --model tinycd # bundle a shareable LSOA GeoPackage
 ```
 
 The numbered `scripts/NN_*.py` remain as thin wrappers around the same commands.
+
+**Data sources.** The composites are rebuilt from open Sentinel-2 COGs via a STAC
+API by default (`gfs composites`, free, no account). The original work used the
+WASDI platform — reproduce that route with `gfs composites --source wasdi --confirm`
+(licensed; arrange usage rights with the WASDI team). Both produce the same
+summer cloud-masked median; the built composites also ship as data, so neither
+upstream service is required to run the pipeline.
 
 ## Development
 
