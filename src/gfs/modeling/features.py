@@ -5,14 +5,15 @@ Turns the per-band binary change maps produced by the change-detection stage
 matrix Phi: one row per LSOA, one column per band, holding the **percentage of
 changed pixels** that fall inside the LSOA polygon.
 
-The pipeline mirrors the notebook exactly:
+Method (a vectorized rasterize/bincount in place of the notebook's per-pixel
+polygonization + spatial join — same quantity, ~2 orders of magnitude faster):
 
-1. **Raster -> vector**: every pixel with a change value ``> 0`` becomes a small
-   ``box`` polygon (one cell wide) in the raster CRS.
-2. **Spatial join**: those change cells are joined to the LSOA polygons
-   (``predicate="intersects"``) and counted per LSOA code.
-3. **Normalize**: the count is divided by the LSOA area and scaled to a
-   percentage, giving the change density per band.
+1. **Rasterize LSOA ids once**: burn the LSOA polygons onto the change-map grid
+   so every pixel carries the id of the LSOA containing its centre.
+2. **Count per id**: for each band, count changed pixels (``> 0``) per LSOA id
+   with ``np.bincount`` — each pixel counted once (no boundary double-counting).
+3. **Normalize**: divide the count by the LSOA area and scale to a percentage,
+   giving the change density per band.
 
 The planning-layer features (per-LSOA % area covered by each London planning
 layer) are also assembled here, since they share the raster->LSOA logic and are
@@ -30,8 +31,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 import rasterio
-from joblib import Parallel, delayed
-from shapely.geometry import box
+import rasterio.features
 
 # Column in the LSOA boundary shapefile holding the 2011 LSOA code.
 LSOA_CODE_COL = "LSOA11CD"
@@ -44,61 +44,56 @@ CRSLike = Any
 class AggregationConfig:
     """Knobs for the raster->LSOA aggregation.
 
-    ``n_jobs=-1`` lets joblib use all cores (the notebook capped it at the file
-    count); ``min_change_value`` keeps any pixel strictly greater than 0, which
-    is how the binary/segmented change maps encode "changed".
+    ``min_change_value`` keeps any pixel strictly greater than it, which is how
+    the binary/segmented change maps encode "changed".
     """
 
     min_change_value: float = 0.0
-    n_jobs: int = -1
 
 
-def raster_to_change_gdf(
-    changes: np.ndarray,
+def rasterize_lsoa_ids(
+    lsoa_gdf: gpd.GeoDataFrame,
     transform: rasterio.Affine,
+    shape: tuple[int, int],
     crs: CRSLike,
-    *,
-    min_change_value: float = 0.0,
-) -> gpd.GeoDataFrame:
-    """Vectorize the changed pixels of a raster band into one box per cell.
+) -> tuple[np.ndarray, np.ndarray]:
+    """Burn LSOA polygons onto the raster grid as integer ids (0 = background).
 
-    Each pixel with value ``> min_change_value`` becomes a one-cell ``box``
-    polygon placed at its georeferenced position (paper §3.5, raster -> vector).
+    Returns ``(id_grid, codes)`` where ``id_grid[i, j]`` is ``k + 1`` for the LSOA
+    at row ``k`` of ``codes`` whose polygon contains that pixel's centre, or 0.
+    Computed once and reused across bands; this is what makes aggregation fast.
     """
-    mask = changes > min_change_value
-    rows, cols = np.where(mask)
-    geometries: list[Any] = []
-    for r, c in zip(rows, cols, strict=True):
-        x, y = cast("tuple[float, float]", transform * (c, r))
-        geometries.append(box(x, y, x + transform[0], y + transform[4]))
-    return gpd.GeoDataFrame(geometry=geometries, crs=crs)
+    lsoa = lsoa_gdf.to_crs(crs) if lsoa_gdf.crs is not None and lsoa_gdf.crs != crs else lsoa_gdf
+    lsoa = lsoa.reset_index(drop=True)
+    shapes = ((geom, idx + 1) for idx, geom in enumerate(lsoa.geometry))
+    id_grid = rasterio.features.rasterize(
+        shapes, out_shape=shape, transform=transform, fill=0, dtype="int32"
+    )
+    return id_grid, lsoa[LSOA_CODE_COL].to_numpy()
 
 
-def count_change_pixels(change_file: str, lsoa_gdf: gpd.GeoDataFrame) -> pd.Series:
+def _count_pixels_per_id(
+    changes: np.ndarray, id_grid: np.ndarray, n_ids: int, min_value: float
+) -> np.ndarray:
+    """Count changed pixels (``> min_value``) falling in each LSOA id (vectorized)."""
+    ids = id_grid[changes > min_value]
+    return np.bincount(ids, minlength=n_ids + 1)[1:]
+
+
+def count_change_pixels(
+    change_file: str, lsoa_gdf: gpd.GeoDataFrame, *, min_change_value: float = 0.0
+) -> pd.Series:
     """Count changed pixels per LSOA for a single change-map tiff.
 
-    Returns a Series indexed by LSOA code whose ``name`` is the tiff's stem (so
-    joining many bands gives one column per band). Mirrors the notebook's
-    ``count_change_pixels`` verbatim.
+    Vectorized: each changed pixel is assigned to the LSOA containing its centre
+    (via a rasterized id grid) and counted with ``np.bincount`` — no per-pixel
+    geometry. Returns a Series indexed by LSOA code, named after the tiff stem.
     """
     with rasterio.open(change_file) as src:
         changes = src.read(1)
-        changes_transform = src.transform
-        changes_crs = src.crs
-
-    changes_gdf = raster_to_change_gdf(changes, changes_transform, changes_crs)
-
-    # Reproject LSOA to match raster CRS if needed.
-    if lsoa_gdf.crs != changes_gdf.crs:
-        lsoa_gdf = lsoa_gdf.to_crs(cast("CRSLike", changes_gdf.crs))
-
-    # Fix potential geometry issues, then spatial-join and count per LSOA.
-    lsoa_gdf = lsoa_gdf.copy()
-    lsoa_gdf["geometry"] = lsoa_gdf.buffer(0)
-    join_gdf = gpd.sjoin(changes_gdf, lsoa_gdf, how="left", predicate="intersects")
-    change_counts = cast("pd.Series", join_gdf.groupby(LSOA_CODE_COL).size())
-    change_counts.name = os.path.basename(change_file).split(".")[0]
-    return change_counts
+        id_grid, codes = rasterize_lsoa_ids(lsoa_gdf, src.transform, changes.shape, src.crs)
+    counts = _count_pixels_per_id(changes, id_grid, len(codes), min_change_value)
+    return pd.Series(counts, index=codes, name=os.path.basename(change_file).split(".")[0])
 
 
 def _band_number(path: str) -> int:
@@ -129,32 +124,33 @@ def aggregate_changes_to_lsoa(
 ) -> pd.DataFrame:
     """Build the satellite feature matrix Phi: % changed pixels per LSOA per band.
 
-    For every change-map tiff in ``changes_dir`` counts the changed pixels inside
-    each LSOA (in parallel via joblib), then converts counts to a percentage of
-    the LSOA's area (paper §3.5). Returns a DataFrame indexed by LSOA code with
-    one column per band tiff.
+    Rasterizes the LSOA polygons onto the change-map grid **once**, then for every
+    band tiff counts changed pixels per LSOA with ``np.bincount`` and converts the
+    count to a percentage of the LSOA's area (paper §3.5). Each changed pixel is
+    assigned to the LSOA containing its centre (no boundary double-counting).
+    Returns a DataFrame indexed by LSOA code with one column per band tiff.
+
+    Assumes all band tiffs in ``changes_dir`` share one grid (they are produced
+    from the same composite), so the id grid is computed a single time.
     """
     cfg = config or AggregationConfig()
-    sorted_file_paths = list_change_files(changes_dir)
+    files = list_change_files(changes_dir)
+    if not files:
+        return pd.DataFrame(index=pd.Index(lsoa_gdf[LSOA_CODE_COL], name=LSOA_CODE_COL))
 
-    lsoa_changes = cast("pd.DataFrame", lsoa_gdf[[LSOA_CODE_COL]].copy()).set_index(LSOA_CODE_COL)
+    with rasterio.open(files[0]) as src:
+        id_grid, codes = rasterize_lsoa_ids(lsoa_gdf, src.transform, src.shape, src.crs)
 
-    n_jobs = cfg.n_jobs
-    if n_jobs <= 0:
-        n_jobs = min(os.cpu_count() or 1, max(len(sorted_file_paths), 1))
-    results = cast(
-        "list[pd.Series]",
-        Parallel(n_jobs=n_jobs)(
-            delayed(count_change_pixels)(change_file, lsoa_gdf) for change_file in sorted_file_paths
-        ),
-    )
+    lsoa_changes = pd.DataFrame(index=pd.Index(codes, name=LSOA_CODE_COL))
+    for change_file in files:
+        with rasterio.open(change_file) as src:
+            changes = src.read(1)
+        counts = _count_pixels_per_id(changes, id_grid, len(codes), cfg.min_change_value)
+        lsoa_changes[os.path.basename(change_file).split(".")[0]] = counts
 
-    for change_counts in results:
-        lsoa_changes = lsoa_changes.join(change_counts, how="left")
-    lsoa_changes = lsoa_changes.fillna(0)
-
-    # Convert raw counts to a percentage of LSOA area.
-    areas = cast("gpd.GeoSeries", lsoa_gdf.set_index(LSOA_CODE_COL).geometry).area
+    # Convert raw counts to a percentage of LSOA area (m^2 in the boundary CRS).
+    area_by_code = cast("gpd.GeoSeries", lsoa_gdf.set_index(LSOA_CODE_COL).geometry).area
+    areas = area_by_code.reindex(codes).to_numpy()
     for column in lsoa_changes.columns:
         lsoa_changes[column] = (lsoa_changes[column] / areas) * 100
 
