@@ -23,13 +23,13 @@ import os
 from typing import Any, cast
 
 import geopandas as gpd
-import numpy as np
 import rasterio
 import rioxarray as rxr
 from rasterio.mask import mask as rio_mask
 from rasterio.merge import merge as rio_merge
 from rioxarray.merge import merge_arrays
 
+from gfs.composites.raster_io import read_raster, valid_pixel_mask, write_raster
 from gfs.config import COMPOSITES_DIR
 
 
@@ -63,22 +63,9 @@ def clip_raster_to_boundary(
     with rasterio.open(raster_path) as src:
         geometry = _boundary_geometries(boundary_gdf, src.crs)
         out_image, out_transform = rio_mask(src, geometry, crop=True)
-        out_meta = src.meta.copy()
-        out_meta.update(
-            {
-                "driver": "GTiff",
-                "height": out_image.shape[1],
-                "width": out_image.shape[2],
-                "transform": out_transform,
-            }
-        )
-        if "nodata" in src.meta:
-            out_meta.update(nodata=src.meta["nodata"])
+        profile = dict(src.profile)
 
-    os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
-    with rasterio.open(out_path, "w", **out_meta) as dest:
-        dest.write(out_image)
-    return out_path
+    return write_raster(out_path, out_image, profile, transform=out_transform)
 
 
 def clip_tiles(
@@ -108,14 +95,9 @@ def valid_data_percentage(raster_path: str, band: int = 1) -> float:
     Sanity check used in the notebook to confirm a clipped tile still carries
     usable data before merging.
     """
-    with rasterio.open(raster_path) as src:
-        meta = src.meta.copy()
-        data = src.read(band)
-    n_total = meta["width"] * meta["height"]
-    if meta.get("nodata") is not None:
-        n_valid = int((data != meta["nodata"]).sum())
-    else:
-        n_valid = int((~np.isnan(data)).sum())
+    data, profile = read_raster(raster_path, band=band)
+    n_total = profile["width"] * profile["height"]
+    n_valid = int(valid_pixel_mask(data, profile.get("nodata")).sum())
     return 100.0 * n_valid / n_total
 
 
@@ -138,22 +120,11 @@ def merge_tiles_mosaic(
     src_files = [rasterio.open(fp) for fp in clipped_files]
     try:
         mosaic, out_trans = rio_merge(src_files)
-        out_meta = src_files[0].meta.copy()
-        out_meta.update(
-            {
-                "driver": "GTiff",
-                "height": mosaic.shape[1],
-                "width": mosaic.shape[2],
-                "transform": out_trans,
-            }
-        )
-        os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
-        with rasterio.open(out_path, "w", **out_meta) as dest:
-            dest.write(mosaic)
+        profile = dict(src_files[0].profile)
     finally:
         for src in src_files:
             src.close()
-    return out_path
+    return write_raster(out_path, mosaic, profile, transform=out_trans)
 
 
 def merge_tiles_average(

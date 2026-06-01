@@ -26,8 +26,9 @@ from typing import Any, cast
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-import rasterio
 from rasterio.features import rasterize
+
+from gfs.composites.raster_io import read_raster, valid_pixel_mask
 
 
 @dataclass
@@ -43,9 +44,8 @@ class CompositePair:
 
 def load_composite(path: str) -> tuple[np.ndarray, Any, Any, float | None]:
     """Read a multi-band composite into ``(array, transform, crs, nodata)``."""
-    with rasterio.open(path) as src:
-        data = src.read()
-        return data, src.transform, src.crs, src.nodata
+    data, profile = read_raster(path)
+    return data, profile["transform"], profile["crs"], profile.get("nodata")
 
 
 def load_pair(earlier_path: str, later_path: str) -> CompositePair:
@@ -80,12 +80,12 @@ def masked_difference(pair: CompositePair) -> np.ma.MaskedArray:
 def missing_data_mask(path: str, band: int) -> np.ndarray:
     """Binary mask (1 = missing) for ``band`` of a composite at ``path``.
 
-    A pixel is missing where it equals the raster's ``nodata`` value, matching
-    the notebook's ``create_missing_data_mask``.
+    A pixel is missing where it is the raster's ``nodata`` value or NaN. (When the
+    raster carries no ``nodata`` tag this falls back to NaN, rather than the old
+    ``data == None`` which silently matched nothing.)
     """
-    with rasterio.open(path) as src:
-        data = src.read(band)
-        return (data == src.nodata).astype(int)
+    data, profile = read_raster(path, band=band)
+    return (~valid_pixel_mask(data, profile.get("nodata"))).astype(int)
 
 
 def combined_missing_mask(earlier_path: str, later_path: str, band: int) -> np.ndarray:
@@ -149,19 +149,15 @@ def zonal_statistics(
     requested ``stats`` columns. Implemented with ``rasterio.features`` so it
     does not require the external ``rasterstats`` package.
     """
-    with rasterio.open(raster_path) as src:
-        raster_crs = src.crs
-        transform = src.transform
-        out_shape = (src.height, src.width)
-        nodata = src.nodata
-        data = src.read(band).astype("float64")
+    data, profile = read_raster(raster_path, band=band)
+    data = data.astype("float64")
+    transform = profile["transform"]
+    out_shape = (profile["height"], profile["width"])
 
-    zones_proj = cast(gpd.GeoDataFrame, zones.to_crs(raster_crs))
+    zones_proj = cast(gpd.GeoDataFrame, zones.to_crs(profile["crs"]))
 
     # Mask nodata/NaN pixels so they are excluded from every statistic.
-    valid = ~np.isnan(data)
-    if nodata is not None:
-        valid &= data != nodata
+    valid = valid_pixel_mask(data, profile.get("nodata"))
 
     records: list[dict[str, float]] = []
     geometries = list(zones_proj.geometry)
