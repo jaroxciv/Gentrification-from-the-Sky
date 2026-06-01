@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+title: "Gentrification from the Sky"
+message: "If you use this software or its methodology, please cite the paper below."
+type: software
+authors:
+  - given-names: Javier
+    family-names: Alfaro
+    affiliation: London School of Economics and Political Science
+  - given-names: Sanja
+    family-names: Šćepanović
+    affiliation: Nokia Bell Labs
+  - given-names: Stephen
+    family-names: Law
+    affiliation: University College London
+  - given-names: Daniele
+    family-names: Quercia
+    affiliation: Nokia Bell Labs / King's College London / Politecnico di Torino
+repository-code: "https://github.com/jaroxciv/Gentrification-from-the-Sky"
+license: MIT
+keywords:
+  - remote sensing
+  - gentrification
+  - change detection
+  - machine learning
+  - Sentinel-2
+preferred-citation:
+  type: conference-paper
+  title: "Gentrification from the Sky: Using Remote Sensing and Machine Learning for Urban Change Detection"
+  authors:
+    - given-names: Javier
+      family-names: Alfaro
+    - given-names: Sanja
+      family-names: Šćepanović
+    - given-names: Stephen
+      family-names: Law
+    - given-names: Daniele
+      family-names: Quercia
+  collection-title: "Computational Urban Planning and Urban Management (CUPUM 2025)"
+  year: 2025

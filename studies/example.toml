@@ -1,0 +1,34 @@
+# Example StudyConfig — apply the method to another city.
+#
+# Point the pipeline at this file with:
+#     GFS_STUDY_CONFIG=studies/example.toml uv run gfs ...
+#
+# Only the keys you set override the London defaults (gfs.config.LONDON); omit
+# the rest. See gfs.config.StudyConfig for every field.
+
+name = "Greater Manchester"
+
+# Geography: a boundary shapefile under data/boundaries/ and its code column.
+boundary_filename = "manchester_lsoa.shp"
+geography = "LSOA"
+geography_code_col = "LSOA21CD"
+
+# Time points: satellite composites and census measures.
+year_t1 = 2017
+year_t2 = 2022
+census_t1 = 2011
+census_t2 = 2021
+
+# Coordinate reference systems (projected, metres for working/boundary).
+working_crs = "EPSG:32630"   # UTM zone for the area (rasters / change maps)
+boundary_crs = "EPSG:27700"  # vectors / boundary / score / export
+geographic_crs = "EPSG:4326" # EE / STAC search
+
+# Modeling population: the paper models only disadvantaged neighborhoods; set
+# this False to model all neighborhoods in your study.
+model_disadvantaged_only = true
+
+# Sentinel-2 bands and composite window can also be overridden, e.g.:
+# sentinel2_bands = ["B2", "B3", "B4", "B8"]
+# composite_month_start = 6
+# composite_month_end = 8
