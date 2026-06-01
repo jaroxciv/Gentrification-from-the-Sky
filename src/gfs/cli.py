@@ -161,6 +161,9 @@ def run_change_detection() -> None:
 # --- Y: gentrification score -------------------------------------------------
 def run_gentrification() -> Path:
     """Build the census-based gentrification score (paper §3.1)."""
+    import geopandas as gpd
+    import pandas as pd
+
     from gfs.gentrification import census
     from gfs.gentrification.score import gentrification_score
 
@@ -171,8 +174,10 @@ def run_gentrification() -> Path:
         age_t1=census.load_age(
             s(cd / "age-2011-lsoa.csv"), code_col="Area Codes", age_cols=("25-29", "30-34")
         ),
+        # Later period uses the LSOA mid-year file the published score was built
+        # from (the 2021 census age export is MSOA-level long-format, not usable).
         age_t2=census.load_age(
-            s(cd / "age-2021-lsoa.csv"),
+            s(cd / "age-2020-lsoa.csv"),
             code_col="LSOA Code",
             age_cols=tuple(str(a) for a in range(25, 35)),
         ),
@@ -193,6 +198,11 @@ def run_gentrification() -> Path:
             s(cd / "imd2019lsoa.csv"), census.IMD_INCOME_DOMAIN, code_col="lsoa_codes"
         ),
     )
+    # Restrict to Greater London and rank percentiles within it (the published
+    # score is London-relative); the raw census/IMD inputs are England-wide.
+    london = list(gpd.read_file(str(DEFAULT_BOUNDARY))["LSOA11CD"])
+    table = cast(pd.DataFrame, table[table["lsoa_code"].isin(london)])
+
     scored = gentrification_score(table)
     OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
     out_path = OUTPUTS_DIR / "gentrification_score.csv"

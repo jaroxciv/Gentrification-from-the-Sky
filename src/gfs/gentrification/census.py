@@ -52,8 +52,14 @@ def reconcile_lsoa(
     official ONS lookup and average numeric columns over the target code so every
     measure shares one geography (mirrors the notebook's de-duplication step).
     """
-    lookup = pd.read_csv(lookup_path, encoding="latin-1")
-    lookup.columns = [c.lower() for c in lookup.columns]
+    # ONS lookups ship in mixed encodings: some are UTF-8 with a byte-order mark,
+    # others latin-1. Try utf-8-sig (strips the BOM) and fall back to latin-1;
+    # strip any residual BOM glyphs from the column names either way.
+    try:
+        lookup = pd.read_csv(lookup_path, encoding="utf-8-sig")
+    except UnicodeDecodeError:
+        lookup = pd.read_csv(lookup_path, encoding="latin-1")
+    lookup.columns = [c.strip().lstrip("﻿ï»¿").lower() for c in lookup.columns]
     merged = df.merge(lookup, left_on=source_code_col, right_on=lookup_from, how="left")
     numeric = merged.select_dtypes(include="number").columns.tolist()
     grouped = cast(pd.DataFrame, merged.groupby(lookup_to)[numeric].mean())
