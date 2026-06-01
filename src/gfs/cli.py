@@ -84,9 +84,11 @@ def run_landcover(*, boundary: Path = DEFAULT_BOUNDARY) -> Path:
 
     _stage("Land cover — Earth Engine", "Dynamic World (green areas)")
     landcover.initialize_ee()
-    out = landcover.export_dynamic_world(str(boundary))
-    console.print(f"  [green]✓[/] wrote {out}")
-    return Path(out)
+    out = Path(landcover.export_dynamic_world(str(boundary)))
+    if not out.exists() or out.stat().st_size == 0:
+        raise RuntimeError(f"Dynamic World export produced no output at {out}")
+    console.print(f"  [green]✓[/] wrote {out} ({out.stat().st_size // 1024} KB)")
+    return out
 
 
 # --- models: change detection -----------------------------------------------

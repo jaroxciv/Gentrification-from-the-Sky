@@ -10,9 +10,15 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 # --- Filesystem layout -------------------------------------------------------
 # Repo root = two levels up from this file (src/gfs/config.py -> repo root).
 ROOT = Path(__file__).resolve().parents[2]
+
+# Load .env so credentials/settings are picked up automatically (process
+# environment still takes precedence; missing file is a no-op).
+load_dotenv(ROOT / ".env")
 
 DATA_DIR = Path(os.environ.get("GFS_DATA_DIR", ROOT / "data"))
 OUTPUTS_DIR = Path(os.environ.get("GFS_OUTPUTS_DIR", ROOT / "outputs"))

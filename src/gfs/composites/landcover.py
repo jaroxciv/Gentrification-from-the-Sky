@@ -79,23 +79,33 @@ def export_dynamic_world(
     layer is small at 10 m, so a direct download is fine — no Drive needed).
     Call :func:`initialize_ee` first.
     """
+    import ee
     import geemap
     import geopandas as gpd
 
     if out_path is None:
         out_path = str(DATA_DIR / f"dynamic_world_london_{scale}m.tif")
 
-    region: Any = geemap.geopandas_to_ee(gpd.read_file(boundary_path))
+    # Use the boundary's bounding rectangle (4 vertices, in WGS84) as the region.
+    # Passing the full London outline — thousands of vertices — would inflate the
+    # Earth Engine request expression past its size limit; the bbox keeps it tiny.
+    min_lng, min_lat, max_lng, max_lat = (
+        float(v) for v in gpd.read_file(boundary_path).to_crs(4326).total_bounds
+    )
+    region: Any = ee.Geometry.Rectangle([min_lng, min_lat, max_lng, max_lat])
+
     start_date = f"{year}-{COMPOSITE_MONTH_START:02d}-01"
     end_date = f"{year}-{COMPOSITE_MONTH_END:02d}-31"
     landcover: Any = geemap.dynamic_world(
         region, start_date, end_date, return_type="class", clip=True
     )
-    geemap.ee_export_image(
+    # download_ee_image (geedim-backed) fetches the image as tiles, so it is not
+    # bound by Earth Engine's single-request download cap (unlike ee_export_image).
+    geemap.download_ee_image(
         landcover,
         filename=out_path,
         scale=scale,
-        region=region.geometry().bounds(),
+        region=region,
         crs=crs,
     )
     return out_path
