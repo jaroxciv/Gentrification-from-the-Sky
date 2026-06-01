@@ -24,7 +24,12 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import PowerTransformer
 
-from gfs.config import GENT_BOTTOM_PERCENTILE, GENT_TOP_PERCENTILE, GEOGRAPHY_CODE_COL
+from gfs.config import (
+    GENT_BOTTOM_PERCENTILE,
+    GENT_TOP_PERCENTILE,
+    GEOGRAPHY_CODE_COL,
+    MODEL_DISADVANTAGED_ONLY,
+)
 
 LSOA_CODE_COL = GEOGRAPHY_CODE_COL
 SCORE_COL = "gentrification_score"
@@ -63,16 +68,19 @@ ADMIN_COLUMNS: frozenset[str] = frozenset(
 
 @dataclass(frozen=True)
 class TargetConfig:
-    """How to binarize the gentrification score into the classification label.
+    """How to define the classification target and the modeling population.
 
-    Defaults reproduce the paper: keep the top quartile (``1``) and the bottom
-    quartile (``0``) of the score, dropping the middle half. ``top``/``bottom``
-    are percentiles in [0, 100].
+    Defaults follow the study config: keep the top quartile (``1``) and bottom
+    quartile (``0``) of the gentrification score, dropping the middle half, over
+    the population set by ``disadvantaged_only`` (the paper models the
+    disadvantaged subset, but that is a study choice — another study may set it
+    ``False`` to model all neighborhoods). ``top``/``bottom`` are percentiles.
     """
 
     top: float = GENT_TOP_PERCENTILE
     bottom: float = GENT_BOTTOM_PERCENTILE
     drop_middle: bool = True
+    disadvantaged_only: bool = MODEL_DISADVANTAGED_ONLY
 
 
 @dataclass(frozen=True)
@@ -186,6 +194,22 @@ def ensure_lsoa_key(df: pd.DataFrame, *, source_col: str = "lsoa_code") -> pd.Da
     return df
 
 
+def restrict_to_disadvantaged(df: pd.DataFrame) -> pd.DataFrame:
+    """Keep only disadvantaged neighborhoods — the study's modeling population.
+
+    The paper models gentrification within the bottom-50th-percentile (NI_t1)
+    neighborhoods only (§3.1); the ``disadvantaged`` flag is set by
+    :func:`gfs.gentrification.score.flag_disadvantaged`. Raises if the column is
+    absent (it must come from the score table).
+    """
+    if DISADVANTAGED_COL not in df.columns:
+        raise KeyError(
+            f"{DISADVANTAGED_COL!r} column required to restrict to the disadvantaged "
+            "population; merge the gentrification score (which carries it) first."
+        )
+    return cast("pd.DataFrame", df[df[DISADVANTAGED_COL].astype(bool)])
+
+
 def assemble_modeling_table(
     score_gdf: pd.DataFrame,
     lsoa_changes: pd.DataFrame,
@@ -204,7 +228,9 @@ def assemble_modeling_table(
        the gentrification score, the satellite change features (``lsoa_changes``)
        and the planning-layer features (``planning``) on it; optionally merge
        ``extra_baseline`` socio predictors too.
-    2. Binarize the score into the classification target (top/bottom quartile).
+    2. Restrict to the disadvantaged population (paper §3.1) when
+       ``target_config.disadvantaged_only`` (the default).
+    3. Binarize the score into the classification target (top/bottom quartile).
 
     Predictors are returned **untransformed**: the Yeo-Johnson power transform is
     applied inside the cross-validation pipeline (:mod:`gfs.modeling.classify`)
@@ -213,6 +239,7 @@ def assemble_modeling_table(
     Returns a :class:`ModelingTable` with the merged DataFrame and the predictor /
     target column names.
     """
+    cfg = target_config or TargetConfig()
     score_gdf = ensure_lsoa_key(score_gdf, source_col=score_code_col)
     merged = cast(
         "pd.DataFrame",
@@ -221,7 +248,9 @@ def assemble_modeling_table(
     if extra_baseline is not None:
         merged = cast("pd.DataFrame", merged.merge(extra_baseline, on=LSOA_CODE_COL))
 
-    merged = binarize_score(merged, target_config)
+    if cfg.disadvantaged_only:
+        merged = restrict_to_disadvantaged(merged)
+    merged = binarize_score(merged, cfg)
 
     predictors = satellite_predictors(merged) + planning_predictors(planning)
     if extra_baseline_predictors:

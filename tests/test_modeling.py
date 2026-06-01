@@ -12,6 +12,7 @@ import pandas as pd
 from gfs.modeling.dataset import (
     SCORE_COL,
     TARGET_COL,
+    TargetConfig,
     assemble_modeling_table,
     binarize_score,
 )
@@ -38,7 +39,9 @@ def test_assemble_joins_across_lsoa_key_and_excludes_admin_columns() -> None:
     codes = [f"E{i:06d}" for i in range(n)]
     rng = np.random.default_rng(0)
 
-    score = pd.DataFrame({"lsoa_code": codes, SCORE_COL: rng.normal(size=n)})
+    # The score table carries the disadvantaged flag; the modeling population is
+    # disadvantaged-only, so include it (all True here to keep every row).
+    score = pd.DataFrame({"lsoa_code": codes, SCORE_COL: rng.normal(size=n), "disadvantaged": True})
     features = pd.DataFrame(
         {"LSOA11CD": codes, **{f"features_band_{b}_tinycd": rng.random(n) for b in (1, 2)}}
     )
@@ -57,3 +60,27 @@ def test_assemble_joins_across_lsoa_key_and_excludes_admin_columns() -> None:
     assert "features_band_1_tinycd" in table.predictors
     assert "Town_Centre_Boundaries" in table.predictors
     assert table.target in table.data.columns
+
+
+def test_modeling_population_defaults_to_disadvantaged_only() -> None:
+    """Contract: by default the table is restricted to disadvantaged neighborhoods
+    (the study's population), and that is a config choice, not hardcoded."""
+    n = 40
+    codes = [f"E{i:06d}" for i in range(n)]
+    rng = np.random.default_rng(1)
+    disadvantaged = np.array([True] * 20 + [False] * 20)
+
+    score = pd.DataFrame(
+        {"lsoa_code": codes, SCORE_COL: rng.normal(size=n), "disadvantaged": disadvantaged}
+    )
+    features = pd.DataFrame({"LSOA11CD": codes, "features_band_1_tinycd": rng.random(n)})
+    planning = pd.DataFrame({"LSOA11CD": codes})
+
+    default = assemble_modeling_table(score, features, planning)
+    all_pop = assemble_modeling_table(
+        score, features, planning, target_config=TargetConfig(disadvantaged_only=False)
+    )
+
+    # Default keeps only (a quartile slice of) the 20 disadvantaged rows.
+    assert len(default.data) <= 20
+    assert len(all_pop.data) > len(default.data)

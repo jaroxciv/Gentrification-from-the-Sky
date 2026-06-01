@@ -91,6 +91,9 @@ class StudyConfig:
     disadvantaged_percentile: int
     gent_top_percentile: int
     gent_bottom_percentile: int
+    # Whether to model only the disadvantaged subset. The paper does; another
+    # study may model all neighborhoods — this is a design choice, not a default.
+    model_disadvantaged_only: bool
     random_state: int
 
     @classmethod
@@ -133,6 +136,7 @@ LONDON = StudyConfig(
     disadvantaged_percentile=50,  # focus on bottom-half neighborhoods at t1
     gent_top_percentile=75,  # binarize score: 1 above Q75, 0 below Q25
     gent_bottom_percentile=25,
+    model_disadvantaged_only=True,  # the paper models the disadvantaged subset only
     random_state=42,
 )
 
@@ -178,6 +182,7 @@ SCORE_MEASURES = STUDY.score_measures
 DISADVANTAGED_PERCENTILE = STUDY.disadvantaged_percentile
 GENT_TOP_PERCENTILE = STUDY.gent_top_percentile
 GENT_BOTTOM_PERCENTILE = STUDY.gent_bottom_percentile
+MODEL_DISADVANTAGED_ONLY = STUDY.model_disadvantaged_only
 RANDOM_STATE = STUDY.random_state
 
 # --- Change-detection training (paper §3.4; method config, not study-specific) ---

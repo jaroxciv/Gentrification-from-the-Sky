@@ -245,7 +245,8 @@ def run_ablation() -> None:
             planning, on=dataset.LSOA_CODE_COL
         ),
     )
-    merged = dataset.binarize_score(merged)
+    # Same modeling population + target as the main comparison.
+    merged = dataset.binarize_score(dataset.restrict_to_disadvantaged(merged))
     points = ablation.evaluate_thresholds(merged, planning_cols)
     frame = ablation.ablation_to_frame(points)
     best = ablation.best_threshold(points, metric="f1")
