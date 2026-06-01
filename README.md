@@ -79,13 +79,29 @@ uv sync                       # creates .venv and installs everything (CPU torch
 
 ## Reproducing the pipeline
 
+The project ships a single CLI, **`gfs`** (run `uv run gfs --help` to see it):
+
 ```bash
-uv run scripts/fetch_data.py              # 0. get the datasets (see data/README.md)
-uv run scripts/01_build_composites.py     # 1. X: Sentinel-2 composites
-uv run scripts/02_run_change_detection.py # 2. models: detect change
-uv run scripts/03_build_gentrification.py # 3. Y: gentrification score
-uv run scripts/04_run_modeling.py         # 4. predict gentrification
-uv run scripts/05_ablation.py             # 5. thresholding ablation
+uv run scripts/fetch_data.py   # 0. get the datasets (see data/README.md)
+uv run gfs composites          # 1. X: Sentinel-2 composites (2016 & 2021)
+uv run gfs change-detect       # 2. models: detect change -> per-band features
+uv run gfs gentrification      # 3. Y: census gentrification score
+uv run gfs model --model tinycd  # 4. predict gentrification
+uv run gfs ablation            # 5. thresholding ablation
+uv run gfs export --model tinycd # bundle a shareable LSOA GeoPackage
+```
+
+The numbered `scripts/NN_*.py` remain as thin wrappers around the same commands.
+
+## Development
+
+```bash
+uv sync --dev
+uv run pytest            # behavioral tests (functional contracts)
+uv run ruff check .      # lint
+uv run ruff format .     # format
+uv run basedpyright src/ scripts/ tests/   # type-check
+uv run pre-commit install  # enable hooks on commit
 ```
 
 ## Citation

@@ -49,6 +49,9 @@ dependencies = [
     "rich>=15.0.0",
 ]
 
+[project.scripts]
+gfs = "gfs.cli:app"
+
 [project.optional-dependencies]
 # Extras that pull large or finicky dependency trees; install on demand.
 benchmark = ["lazypredict>=0.2.12"]  # broad model comparison (used in ablation)
