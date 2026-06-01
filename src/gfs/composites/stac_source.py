@@ -22,10 +22,10 @@ from typing import Any
 import geopandas as gpd
 
 from gfs.config import (
-    COMPOSITE_MONTH_END,
-    COMPOSITE_MONTH_START,
     COMPOSITES_DIR,
+    GEOGRAPHIC_CRS,
     WORKING_CRS,
+    composite_window,
 )
 
 EARTH_SEARCH_URL = "https://earth-search.aws.element84.com/v1"
@@ -62,11 +62,12 @@ def search_sentinel2(
     """Find summer Sentinel-2 L2A scenes intersecting ``bbox`` for ``year``."""
     import pystac_client
 
+    start, end = composite_window(year)
     client = pystac_client.Client.open(stac_url)
     search = client.search(
         collections=[collection],
         bbox=list(bbox),
-        datetime=f"{year}-{COMPOSITE_MONTH_START:02d}-01/{year}-{COMPOSITE_MONTH_END:02d}-31",
+        datetime=f"{start}/{end}",
         query={"eo:cloud_cover": {"lt": max_cloud}},
     )
     return list(search.items())
@@ -83,17 +84,18 @@ def build_composite_stac(
 ) -> str:
     """Build a cloud-masked summer median composite for ``year`` and write a GeoTIFF.
 
-    Loads the 11 study bands + SCL for the scenes over the London bounding box,
-    masks clouds/shadows via SCL, takes the per-pixel median over time, and saves
-    a multi-band GeoTIFF to ``COMPOSITES_DIR`` (or ``out_path``).
+    Loads the 11 study bands + SCL for the scenes over the boundary's bounding
+    box, masks clouds/shadows via SCL, takes the per-pixel median over time, and
+    saves a multi-band GeoTIFF. The default name matches what the change-detection
+    stage reads (``clipped_merged_<year>.tiff``), so the two chain directly.
     """
     import odc.stac
     import rioxarray  # noqa: F401  (registers the .rio accessor used below)
 
     if out_path is None:
-        out_path = str(COMPOSITES_DIR / f"composite_stac_{year}.tif")
+        out_path = str(COMPOSITES_DIR / f"clipped_merged_{year}.tiff")
 
-    gdf = gpd.read_file(boundary_path).to_crs(4326)
+    gdf = gpd.read_file(boundary_path).to_crs(GEOGRAPHIC_CRS)
     b = gdf.total_bounds
     bbox: tuple[float, float, float, float] = (
         float(b[0]),

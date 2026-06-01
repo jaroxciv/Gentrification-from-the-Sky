@@ -29,6 +29,7 @@ from gfs.config import (
     CENSUS_DIR,
     COMPOSITES_DIR,
     DEFAULT_BOUNDARY,
+    GEOGRAPHY_CODE_COL,
     OUTPUTS_DIR,
     PLANNING_DIR,
     YEAR_T1,
@@ -166,7 +167,7 @@ def run_gentrification() -> Path:
     )
     # Restrict to Greater London and rank percentiles within it (the published
     # score is London-relative); the raw census/IMD inputs are England-wide.
-    london = list(gpd.read_file(str(DEFAULT_BOUNDARY))["LSOA11CD"])
+    london = list(gpd.read_file(str(DEFAULT_BOUNDARY))[GEOGRAPHY_CODE_COL])
     table = cast(pd.DataFrame, table[table["lsoa_code"].isin(london)])
 
     scored = gentrification_score(table)

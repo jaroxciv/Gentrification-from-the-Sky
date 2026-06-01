@@ -36,8 +36,21 @@ N_THRESHOLDS = 30
 
 
 def default_thresholds() -> np.ndarray:
-    """The 30 evenly spaced change thresholds swept in the paper's ablation."""
-    return np.linspace(THRESHOLD_MIN, THRESHOLD_MAX, N_THRESHOLDS)
+    """The 30 evenly spaced (integer) change thresholds swept in the ablation.
+
+    Integers so they match the ``_<threshold>`` column suffixes exactly (a float
+    like 124.13 would never match a ``..._124`` column).
+    """
+    return np.linspace(THRESHOLD_MIN, THRESHOLD_MAX, N_THRESHOLDS).round().astype(int)
+
+
+def change_columns_for_threshold(df: pd.DataFrame, threshold: int) -> list[str]:
+    """Change-feature columns for one threshold (names ending ``_<threshold>``).
+
+    Matches the underscore-anchored suffix so e.g. threshold 10 does not also
+    capture columns ending in 110/210 (a bare ``endswith("10")`` would).
+    """
+    return [c for c in df.columns if c.endswith(f"_{threshold}")]
 
 
 def threshold_predictors(
@@ -46,17 +59,8 @@ def threshold_predictors(
     *,
     planning_predictors: list[str],
 ) -> list[str]:
-    """Change columns for one threshold plus the (threshold-invariant) planning ones.
-
-    The threshold-specific change columns end with the integer threshold (the
-    notebook names them ``..._threshold_<t>``); these are combined with the
-    planning-layer predictors, which do not depend on the threshold.
-    """
-    # Match the underscore-anchored threshold suffix so e.g. threshold 10 does
-    # not also capture columns ending in 110/210 (bare `endswith("10")` would).
-    suffix = f"_{threshold}"
-    change_predictors = [c for c in df.columns if c.endswith(suffix)]
-    return change_predictors + planning_predictors
+    """That threshold's change columns plus the (threshold-invariant) planning ones."""
+    return change_columns_for_threshold(df, threshold) + planning_predictors
 
 
 @dataclass
@@ -91,6 +95,12 @@ def evaluate_thresholds(
     to avoid leakage) with stratified cross-validation on weighted F1, balanced
     accuracy and ROC-AUC — the same scorer as the main classifier comparison, so
     the numbers are directly comparable.
+
+    ``df`` must carry one set of change columns **per threshold**, named with the
+    ``_<threshold>`` suffix (produced by aggregating the simple-diff change maps
+    thresholded at each sweep value). If a threshold matches no change column the
+    sweep would silently reduce to planning-only predictors, so this raises
+    instead — see :func:`change_columns_for_threshold`.
     """
     base = model if model is not None else default_model()
     sweep = thresholds if thresholds is not None else default_thresholds()
@@ -99,6 +109,13 @@ def evaluate_thresholds(
 
     for raw_threshold in sweep:
         threshold = int(raw_threshold)
+        if not change_columns_for_threshold(df, threshold):
+            raise ValueError(
+                f"No change columns ending '_{threshold}' in the table — the "
+                "thresholded change maps must be aggregated per threshold first "
+                "(see scripts/05_ablation.py / gfs.modeling.features). Refusing to "
+                "run the sweep on planning predictors alone."
+            )
         predictors = threshold_predictors(df, threshold, planning_predictors=planning_predictors)
         x = cast("pd.DataFrame", df[predictors])
         y = cast("pd.Series", df[target])

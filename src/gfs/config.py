@@ -11,6 +11,7 @@ re-points the whole pipeline at another city.
 
 from __future__ import annotations
 
+import calendar
 import os
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -157,6 +158,20 @@ DEFAULT_BOUNDARY = BOUNDARIES_DIR / STUDY.boundary_filename
 WORKING_CRS = STUDY.working_crs
 BOUNDARY_CRS = STUDY.boundary_crs
 GEOGRAPHIC_CRS = STUDY.geographic_crs
+
+
+def composite_window(year: int) -> tuple[str, str]:
+    """ISO ``(start, end)`` dates for the study's summer composite window in ``year``.
+
+    The end day is the actual last day of ``COMPOSITE_MONTH_END`` (via
+    ``calendar.monthrange``), so non-31-day months don't produce invalid dates.
+    """
+    last_day = calendar.monthrange(year, COMPOSITE_MONTH_END)[1]
+    return (
+        f"{year}-{COMPOSITE_MONTH_START:02d}-01",
+        f"{year}-{COMPOSITE_MONTH_END:02d}-{last_day:02d}",
+    )
+
 
 # Gentrification score + modeling.
 SCORE_MEASURES = STUDY.score_measures

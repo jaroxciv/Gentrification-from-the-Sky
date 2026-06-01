@@ -20,14 +20,14 @@ from __future__ import annotations
 from typing import Any
 
 from gfs.config import (
-    COMPOSITE_MONTH_END,
-    COMPOSITE_MONTH_START,
     DATA_DIR,
     GEE_PROJECT,
     GEE_SERVICE_ACCOUNT,
     GEE_SERVICE_ACCOUNT_KEY,
+    GEOGRAPHIC_CRS,
     WORKING_CRS,
     YEAR_T2,
+    composite_window,
 )
 
 # Dynamic World class labels (band "label" values 0-8), trees/grass = green.
@@ -91,12 +91,11 @@ def export_dynamic_world(
     # Passing the full London outline — thousands of vertices — would inflate the
     # Earth Engine request expression past its size limit; the bbox keeps it tiny.
     min_lng, min_lat, max_lng, max_lat = (
-        float(v) for v in gpd.read_file(boundary_path).to_crs(4326).total_bounds
+        float(v) for v in gpd.read_file(boundary_path).to_crs(GEOGRAPHIC_CRS).total_bounds
     )
     region: Any = ee.Geometry.Rectangle([min_lng, min_lat, max_lng, max_lat])
 
-    start_date = f"{year}-{COMPOSITE_MONTH_START:02d}-01"
-    end_date = f"{year}-{COMPOSITE_MONTH_END:02d}-31"
+    start_date, end_date = composite_window(year)
     landcover: Any = geemap.dynamic_world(
         region, start_date, end_date, return_type="class", clip=True
     )

@@ -23,7 +23,7 @@ from typing import Any
 
 import geopandas as gpd
 
-from gfs.config import COMPOSITE_MONTH_END, COMPOSITE_MONTH_START, WASDI_CONFIG
+from gfs.config import GEOGRAPHIC_CRS, WASDI_CONFIG, composite_window
 
 # The 11 Sentinel-2 bands requested from WASDI, at their native resolutions
 # (the s2_average_bands processor resamples to SPATIAL_RESOLUTION_M).
@@ -56,11 +56,6 @@ def init_wasdi(config_path: str | None = None) -> Any:
     return wasdi
 
 
-def _summer_dates(year: int) -> tuple[str, str]:
-    """The summer composite window for a year, as WASDI ISO date strings."""
-    return f"{year}-{COMPOSITE_MONTH_START:02d}-01", f"{year}-{COMPOSITE_MONTH_END:02d}-31"
-
-
 def build_average_composite(
     boundary_path: str,
     year: int,
@@ -89,11 +84,11 @@ def build_average_composite(
         )
 
     wasdi = init_wasdi()
-    gdf = gpd.read_file(boundary_path).to_crs(4326)
+    gdf = gpd.read_file(boundary_path).to_crs(GEOGRAPHIC_CRS)
     min_lng, min_lat, max_lng, max_lat = (float(v) for v in gdf.total_bounds)
     tiles = [x.split("_")[1] for x in wasdi.getProductsByActiveWorkspace() if x.endswith(".tif")]
 
-    start_date, end_date = _summer_dates(year)
+    start_date, end_date = composite_window(year)
     jobs: list[str] = []
     for tile in tiles:
         params = {
