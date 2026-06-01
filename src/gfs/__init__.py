@@ -13,6 +13,15 @@ Pipeline (read top to bottom):
 
 See the paper: "Gentrification from the Sky: Using Remote Sensing and Machine
 Learning for Urban Change Detection" (CUPUM 2025).
+
+Subpackages are imported on demand (``from gfs.modeling import ...``) so the
+heavy geospatial / deep-learning dependencies load only when used; the top level
+stays light and exposes just the study configuration.
 """
 
+from __future__ import annotations
+
+from gfs.config import LONDON, STUDY, StudyConfig
+
 __version__ = "0.1.0"
+__all__ = ["LONDON", "STUDY", "StudyConfig", "__version__"]
