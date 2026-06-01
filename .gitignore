@@ -1,0 +1,43 @@
+# --- Secrets / credentials (NEVER commit) ---
+.env
+*.env
+!.env.example
+
+# --- Python / uv ---
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.ruff_cache/
+.pytest_cache/
+
+# --- Data (lives in Dropbox, not git) ---
+data/
+!data/.gitkeep
+!data/README.md
+*.tif
+*.tiff
+*.geotiff
+*.npy
+*.npz
+*.parquet
+*.h5
+*.hdf5
+
+# --- Models / outputs ---
+models/*.pt
+models/*.pth
+models/*.pkl
+outputs/
+!outputs/.gitkeep
+figures/*.png
+!figures/.gitkeep
+
+# --- Staging area for migrated source (not part of the repo) ---
+_staging/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
