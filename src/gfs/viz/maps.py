@@ -31,10 +31,10 @@ from matplotlib.patches import Patch
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from rasterio.mask import mask
 
-from gfs.config import FIGURES_DIR
+from gfs.config import BOUNDARY_CRS, FIGURES_DIR, WORKING_CRS
 
-# Working CRS for all London layers in the study (UTM zone 30N).
-TARGET_CRS = "EPSG:32630"
+# Working CRS for all map layers (the study's projected raster CRS).
+TARGET_CRS = WORKING_CRS
 # Change-pixel overlay colors (RGBA).
 CHANGE_PURPLE = (0.5, 0.0, 0.5, 1.0)
 CHANGE_BLACK = (0.0, 0.0, 0.0, 1.0)
@@ -176,7 +176,7 @@ def plot_conservation_areas_with_changes(
     ``FIGURES_DIR / out_name``. Mirrors the notebook's "Full" conservation map.
     """
     if conservation_gdf.crs is None or "unknown" in str(conservation_gdf.crs):
-        conservation_gdf = conservation_gdf.set_crs("EPSG:27700")
+        conservation_gdf = conservation_gdf.set_crs(BOUNDARY_CRS)
     conservation_gdf = cast("gpd.GeoDataFrame", conservation_gdf[conservation_gdf.is_valid])
 
     lsoa_gdf = lsoa_gdf.to_crs(TARGET_CRS)

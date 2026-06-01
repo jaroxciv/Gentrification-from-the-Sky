@@ -26,6 +26,7 @@ from gfs.config import (
     GEE_PROJECT,
     GEE_SERVICE_ACCOUNT,
     GEE_SERVICE_ACCOUNT_KEY,
+    WORKING_CRS,
     YEAR_T2,
 )
 
@@ -70,7 +71,7 @@ def export_dynamic_world(
     *,
     year: int = YEAR_T2,
     scale: int = 10,
-    crs: str = "EPSG:32630",
+    crs: str = WORKING_CRS,
 ) -> str:
     """Export the Dynamic World land-cover class image for London to a GeoTIFF.
 

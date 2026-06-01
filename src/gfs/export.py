@@ -18,12 +18,13 @@ from typing import cast
 import geopandas as gpd
 import pandas as pd
 
-from gfs.config import OUTPUTS_DIR
+from gfs.config import BOUNDARY_CRS, OUTPUTS_DIR
 
 # CRS of the gentrification GeoPackage (British National Grid). The original
 # notebook mis-tagged it EPSG:32630, but the coordinate bounds (easting
-# ~503-562k, northing ~156-201k) are unambiguously EPSG:27700.
-SOURCE_EPSG = 27700
+# ~503-562k, northing ~156-201k) are unambiguously EPSG:27700 = the study's
+# boundary CRS.
+SOURCE_CRS = BOUNDARY_CRS
 
 # Score columns worth sharing (drop raw census counts / admin duplicates).
 SCORE_COLUMNS = [
@@ -66,7 +67,7 @@ def export_outputs(model: str = "tinycd", *, date: str = "100824") -> Path:
 
     scores = gpd.read_file(scores_path)
     if scores.crs is None:
-        scores = scores.set_crs(epsg=SOURCE_EPSG)
+        scores = scores.set_crs(SOURCE_CRS)
 
     keep = [c for c in SCORE_COLUMNS if c in scores.columns] + ["geometry"]
     scores = cast(gpd.GeoDataFrame, scores[keep])
@@ -74,7 +75,7 @@ def export_outputs(model: str = "tinycd", *, date: str = "100824") -> Path:
 
     features = pd.read_csv(features_path)
     merged = cast(gpd.GeoDataFrame, scores.merge(features, on="LSOA11CD", how="left"))
-    merged = merged.set_crs(epsg=SOURCE_EPSG, allow_override=True)
+    merged = merged.set_crs(SOURCE_CRS, allow_override=True)
 
     out_path = OUTPUTS_DIR / f"gentrification_outputs_{model}.gpkg"
     merged.to_file(out_path, driver="GPKG")

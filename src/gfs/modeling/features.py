@@ -33,8 +33,10 @@ import pandas as pd
 import rasterio
 import rasterio.features
 
-# Column in the LSOA boundary shapefile holding the 2011 LSOA code.
-LSOA_CODE_COL = "LSOA11CD"
+from gfs.config import GEOGRAPHY_CODE_COL
+
+# Boundary attribute holding the neighborhood code (e.g. "LSOA11CD").
+LSOA_CODE_COL = GEOGRAPHY_CODE_COL
 
 # Loosely-typed CRS-like value handed back by rasterio/geopandas.
 CRSLike = Any

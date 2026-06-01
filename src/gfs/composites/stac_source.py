@@ -21,7 +21,12 @@ from typing import Any
 
 import geopandas as gpd
 
-from gfs.config import COMPOSITE_MONTH_END, COMPOSITE_MONTH_START, COMPOSITES_DIR
+from gfs.config import (
+    COMPOSITE_MONTH_END,
+    COMPOSITE_MONTH_START,
+    COMPOSITES_DIR,
+    WORKING_CRS,
+)
 
 EARTH_SEARCH_URL = "https://earth-search.aws.element84.com/v1"
 S2_COLLECTION = "sentinel-2-l2a"
@@ -74,7 +79,7 @@ def build_composite_stac(
     *,
     max_cloud: float = 20.0,
     resolution: int = 10,
-    crs: str = "EPSG:32630",
+    crs: str = WORKING_CRS,
 ) -> str:
     """Build a cloud-masked summer median composite for ``year`` and write a GeoTIFF.
 

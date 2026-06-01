@@ -26,9 +26,9 @@ from rich.panel import Panel
 from rich.table import Table
 
 from gfs.config import (
-    BOUNDARIES_DIR,
     CENSUS_DIR,
     COMPOSITES_DIR,
+    DEFAULT_BOUNDARY,
     OUTPUTS_DIR,
     PLANNING_DIR,
     YEAR_T1,
@@ -41,8 +41,6 @@ app = typer.Typer(
     no_args_is_help=True,
     add_completion=False,
 )
-
-DEFAULT_BOUNDARY = BOUNDARIES_DIR / "LSOA_2011_London_gen_MHW.shp"
 
 
 def _stage(title: str, subtitle: str) -> None:

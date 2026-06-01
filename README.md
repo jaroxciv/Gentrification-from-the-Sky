@@ -94,6 +94,15 @@ uv run gfs export --model tinycd # bundle a shareable LSOA GeoPackage
 
 The numbered `scripts/NN_*.py` remain as thin wrappers around the same commands.
 
+**Applying to another city.** The study design (geography, year pair, CRS, bands,
+score definition) lives in a single `StudyConfig` (`gfs.config`), defaulting to
+Greater London. Point the pipeline elsewhere with a TOML that overrides only what
+differs (see [`studies/example.toml`](studies/example.toml)):
+
+```bash
+GFS_STUDY_CONFIG=studies/example.toml uv run gfs gentrification
+```
+
 **Data sources.** The composites are rebuilt from open Sentinel-2 COGs via a STAC
 API by default (`gfs composites`, free, no account). The original work used the
 WASDI platform — reproduce that route with `gfs composites --source wasdi --confirm`

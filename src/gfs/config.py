@@ -1,14 +1,20 @@
-"""Project-wide paths and constants.
+"""Project-wide configuration: filesystem layout, credentials, and the study design.
 
-Centralizes the magic numbers from the paper (bands, years, geographies, model
-hyperparameters) and the on-disk layout so the rest of the package never
-hard-codes a path or a year.
+The **study design** (geography, time points, bands, CRS, score parameters) is
+captured in a single :class:`StudyConfig` so the pipeline is not hard-wired to
+Greater London. :data:`LONDON` reproduces the paper; :data:`STUDY` is the active
+study (``LONDON`` unless a TOML is given via ``GFS_STUDY_CONFIG``). The familiar
+module-level constants (``YEAR_T1``, ``SENTINEL2_BANDS``, ``WORKING_CRS`` …) are
+derived from ``STUDY``, so existing imports keep working and swapping ``STUDY``
+re-points the whole pipeline at another city.
 """
 
 from __future__ import annotations
 
 import os
+from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
 
@@ -30,15 +36,16 @@ CENSUS_DIR = DATA_DIR / "census"
 BOUNDARIES_DIR = DATA_DIR / "boundaries"
 PLANNING_DIR = DATA_DIR / "planning_layers"
 
+# Change-detection features land here, one subfolder per model
+# (e.g. outputs/features_tinycd/), matching the original project layout.
+FEATURES_DIR = OUTPUTS_DIR
+
 # --- External data-source credentials (optional; for regenerating raw data) --
 # These power the two upstream stages whose outputs already ship as data:
-#   * WASDI    -> the raw Sentinel-2 composites (paid platform; see below)
+#   * WASDI    -> the raw Sentinel-2 composites (licensed platform; see below)
 #   * Earth Engine -> the Dynamic World land-cover layer (green areas)
-# All are read from the environment / .env so runs stay headless and credential
+# All read from the environment / .env so runs stay headless and credential
 # files never enter git.
-#
-# Earth Engine: a project is always required; a service account makes auth fully
-# headless (preferred on HPC/CI), otherwise persistent user credentials are used.
 GEE_PROJECT = os.environ.get("GFS_GEE_PROJECT", "lse23-24")
 GEE_SERVICE_ACCOUNT = os.environ.get("GFS_GEE_SERVICE_ACCOUNT") or None
 GEE_SERVICE_ACCOUNT_KEY = os.environ.get("GFS_GEE_SERVICE_ACCOUNT_KEY") or None
@@ -48,61 +55,117 @@ GEE_SERVICE_ACCOUNT_KEY = os.environ.get("GFS_GEE_SERVICE_ACCOUNT_KEY") or None
 # the compositing processor runs only on explicit opt-in (gfs.composites.wasdi_source).
 WASDI_CONFIG = Path(os.environ.get("GFS_WASDI_CONFIG", ROOT / "wasdi_config.json"))
 
-# Change-detection features land here, one subfolder per model
-# (e.g. outputs/features_tinycd/), matching the original project layout.
-FEATURES_DIR = OUTPUTS_DIR
 
 # --- Study design (paper §3) -------------------------------------------------
-# Two time points the whole study compares.
-YEAR_T1 = 2016  # Sentinel-2 starts mid-2015; 2016 is the first complete composite.
-YEAR_T2 = 2021
+@dataclass(frozen=True)
+class StudyConfig:
+    """Everything that is specific to a study area / run.
 
-# Census time points for the gentrification score (paper §3.1, Table 1).
-CENSUS_T1 = 2011
-CENSUS_T2 = 2021
+    Swap this (or load one from TOML) to apply the method to another city: a
+    different boundary, geography, year pair, projection or score definition.
+    """
 
-# Sentinel-2 summer window with fewest clouds over London (paper §3.2).
-COMPOSITE_MONTH_START = 6  # June 1st
-COMPOSITE_MONTH_END = 8  # August 31st
+    name: str
+    # Geography: boundary shapefile name (under BOUNDARIES_DIR) + its code column.
+    boundary_filename: str
+    geography: str  # short label, e.g. "LSOA"
+    geography_code_col: str  # boundary attribute holding the area code, e.g. "LSOA11CD"
+    # Time points: satellite composites and census measures.
+    year_t1: int
+    year_t2: int
+    census_t1: int
+    census_t2: int
+    # Sentinel-2 composite window + bands.
+    composite_month_start: int
+    composite_month_end: int
+    sentinel2_bands: tuple[str, ...]
+    target_resolution_m: int
+    patch_size: int  # imagelet size for the DL feature extractors
+    # Coordinate reference systems.
+    working_crs: str  # rasters / composites / change maps (projected, metres)
+    boundary_crs: str  # vectors / boundary / score / export (projected, metres)
+    geographic_crs: str  # lon/lat used for Earth Engine & STAC search
+    # Gentrification score + modeling.
+    score_measures: tuple[str, ...]
+    disadvantaged_percentile: int
+    gent_top_percentile: int
+    gent_bottom_percentile: int
+    random_state: int
 
-# All 11 Sentinel-2 bands used, resampled to a uniform 10 m resolution.
-SENTINEL2_BANDS = (
-    "B1",
-    "B2",
-    "B3",
-    "B4",
-    "B5",
-    "B6",
-    "B7",
-    "B8",
-    "B8A",
-    "B11",
-    "B12",
+    @classmethod
+    def from_toml(cls, path: str | os.PathLike[str]) -> StudyConfig:
+        """Load a study from a TOML file, overriding only the keys it specifies.
+
+        Keys may sit at the top level or under a ``[study]`` table; anything not
+        given falls back to :data:`LONDON`.
+        """
+        import tomllib
+
+        with open(path, "rb") as handle:
+            data: dict[str, Any] = tomllib.load(handle)
+        overrides = data.get("study", data)
+        for seq_key in ("sentinel2_bands", "score_measures"):
+            if seq_key in overrides:
+                overrides[seq_key] = tuple(overrides[seq_key])
+        return replace(LONDON, **overrides)
+
+
+# The paper's study: Greater London, Sentinel-2 2016/2021, census 2011/2021.
+LONDON = StudyConfig(
+    name="Greater London",
+    boundary_filename="LSOA_2011_London_gen_MHW.shp",
+    geography="LSOA",
+    geography_code_col="LSOA11CD",
+    year_t1=2016,  # Sentinel-2 starts mid-2015; 2016 is the first full composite.
+    year_t2=2021,
+    census_t1=2011,
+    census_t2=2021,
+    composite_month_start=6,  # June 1st  — summer window, fewest clouds
+    composite_month_end=8,  # August 31st
+    sentinel2_bands=("B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B8A", "B11", "B12"),
+    target_resolution_m=10,
+    patch_size=256,
+    working_crs="EPSG:32630",  # UTM zone 30N (composites / change maps)
+    boundary_crs="EPSG:27700",  # British National Grid (LSOA boundary / score)
+    geographic_crs="EPSG:4326",  # WGS84 lon/lat (EE / STAC search)
+    score_measures=("age", "edu", "house", "income"),  # age, education, housing, income
+    disadvantaged_percentile=50,  # focus on bottom-half neighborhoods at t1
+    gent_top_percentile=75,  # binarize score: 1 above Q75, 0 below Q25
+    gent_bottom_percentile=25,
+    random_state=42,
 )
-TARGET_RESOLUTION_M = 10
 
-# Imagelet size fed to the deep-learning feature extractors (paper §3.3).
-PATCH_SIZE = 256
+# Active study: a TOML via GFS_STUDY_CONFIG, else London.
+_study_toml = os.environ.get("GFS_STUDY_CONFIG")
+STUDY: StudyConfig = StudyConfig.from_toml(_study_toml) if _study_toml else LONDON
 
-# Neighborhood geography.
-GEOGRAPHY = "LSOA"  # Lower Layer Super Output Area
+# --- Derived module-level constants (sourced from STUDY) ---------------------
+YEAR_T1 = STUDY.year_t1
+YEAR_T2 = STUDY.year_t2
+CENSUS_T1 = STUDY.census_t1
+CENSUS_T2 = STUDY.census_t2
+COMPOSITE_MONTH_START = STUDY.composite_month_start
+COMPOSITE_MONTH_END = STUDY.composite_month_end
+SENTINEL2_BANDS = STUDY.sentinel2_bands
+TARGET_RESOLUTION_M = STUDY.target_resolution_m
+PATCH_SIZE = STUDY.patch_size
+GEOGRAPHY = STUDY.geography
+GEOGRAPHY_CODE_COL = STUDY.geography_code_col
+DEFAULT_BOUNDARY = BOUNDARIES_DIR / STUDY.boundary_filename
 
-# --- Gentrification score (paper §3.1) ---------------------------------------
-# The four socioeconomic measures averaged into the neighborhood index, as the
-# column stems used throughout (e.g. ``t1_age``, ``t2_house``). Single source of
-# truth — gfs.gentrification.score imports this.
-SCORE_MEASURES = ("age", "edu", "house", "income")  # age, education, housing, income
-# Study focuses on disadvantaged neighborhoods: bottom 50th percentile in t1.
-DISADVANTAGED_PERCENTILE = 50
+# Coordinate reference systems (centralized; were scattered as literals).
+WORKING_CRS = STUDY.working_crs
+BOUNDARY_CRS = STUDY.boundary_crs
+GEOGRAPHIC_CRS = STUDY.geographic_crs
 
-# --- Modeling (paper §4) -----------------------------------------------------
-# Binarize the gentrification score by its top/bottom quartiles; drop the middle.
-GENT_TOP_PERCENTILE = 75
-GENT_BOTTOM_PERCENTILE = 25
+# Gentrification score + modeling.
+SCORE_MEASURES = STUDY.score_measures
+DISADVANTAGED_PERCENTILE = STUDY.disadvantaged_percentile
+GENT_TOP_PERCENTILE = STUDY.gent_top_percentile
+GENT_BOTTOM_PERCENTILE = STUDY.gent_bottom_percentile
+RANDOM_STATE = STUDY.random_state
 
-RANDOM_STATE = 42
-
-# --- Change-detection training (paper §3.4) ----------------------------------
+# --- Change-detection training (paper §3.4; method config, not study-specific) ---
 CD_LEARNING_RATE = 1e-3
 CD_BATCH_SIZE = 8
 CD_EPOCHS = 1  # one-shot Siamese learning...

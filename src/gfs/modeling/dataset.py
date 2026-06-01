@@ -24,9 +24,9 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import PowerTransformer
 
-from gfs.config import GENT_BOTTOM_PERCENTILE, GENT_TOP_PERCENTILE
+from gfs.config import GENT_BOTTOM_PERCENTILE, GENT_TOP_PERCENTILE, GEOGRAPHY_CODE_COL
 
-LSOA_CODE_COL = "LSOA11CD"
+LSOA_CODE_COL = GEOGRAPHY_CODE_COL
 SCORE_COL = "gentrification_score"
 TARGET_COL = "gentrification_binary"
 DISADVANTAGED_COL = "disadvantaged"
