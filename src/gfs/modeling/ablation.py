@@ -22,16 +22,12 @@ import numpy as np
 import pandas as pd
 from imblearn.ensemble import BalancedRandomForestClassifier
 from sklearn.base import ClassifierMixin
-from sklearn.metrics import (
-    balanced_accuracy_score,
-    f1_score,
-    roc_auc_score,
-)
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold
 
 from gfs.config import RANDOM_STATE
 from gfs.modeling.classify import build_pipeline
 from gfs.modeling.dataset import TARGET_COL
+from gfs.modeling.evaluation import score_estimator
 
 # Threshold sweep used in the notebook ablation: 30 points from 100 to 800.
 THRESHOLD_MIN = 100.0
@@ -85,42 +81,36 @@ def evaluate_thresholds(
     model: ClassifierMixin | None = None,
     thresholds: np.ndarray | None = None,
     target: str = TARGET_COL,
-    test_size: float = 0.25,
+    n_splits: int = 5,
     random_state: int = RANDOM_STATE,
 ) -> list[AblationPoint]:
     """Sweep the change threshold and score the model at each (paper §5).
 
     For every threshold: select that threshold's change columns + the planning
-    predictors, fit ``model`` (behind a Yeo-Johnson transform) on a train split,
-    and score weighted F1, balanced accuracy and ROC-AUC on the held-out split.
-    The transform lives in a pipeline so it is fit on the training split only
-    (no leakage). Mirrors the notebook's ``evaluate_model`` ablation loop.
+    predictors and score the model (behind a Yeo-Johnson transform, fit per fold
+    to avoid leakage) with stratified cross-validation on weighted F1, balanced
+    accuracy and ROC-AUC — the same scorer as the main classifier comparison, so
+    the numbers are directly comparable.
     """
     base = model if model is not None else default_model()
     sweep = thresholds if thresholds is not None else default_thresholds()
+    cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=random_state)
     points: list[AblationPoint] = []
 
     for raw_threshold in sweep:
         threshold = int(raw_threshold)
         predictors = threshold_predictors(df, threshold, planning_predictors=planning_predictors)
-
         x = cast("pd.DataFrame", df[predictors])
         y = cast("pd.Series", df[target])
-        x_train, x_test, y_train, y_test = train_test_split(
-            x, y, test_size=test_size, random_state=random_state
-        )
 
         clf = cast("Any", build_pipeline(base))
-        clf.fit(x_train, y_train)
-        y_pred = clf.predict(x_test)
-        y_proba = clf.predict_proba(x_test)[:, 1]
-
+        metrics = score_estimator(clf, x, y, cv=cv)
         points.append(
             AblationPoint(
                 threshold=float(raw_threshold),
-                f1=float(f1_score(y_test, y_pred, average="weighted")),
-                balanced_accuracy=float(balanced_accuracy_score(y_test, y_pred)),
-                roc_auc=float(roc_auc_score(y_test, y_proba)),
+                f1=metrics["f1_weighted"],
+                balanced_accuracy=metrics["balanced_accuracy"],
+                roc_auc=metrics["roc_auc"],
             )
         )
     return points

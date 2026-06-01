@@ -30,10 +30,10 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from gfs.config import DISADVANTAGED_PERCENTILE
+from gfs.config import DISADVANTAGED_PERCENTILE, SCORE_MEASURES
 
-# Column stems for the four measures, in index order.
-MEASURES = ("age", "edu", "house", "income")
+# Column stems for the four measures, in index order (single source: config).
+MEASURES = SCORE_MEASURES
 EQUAL_WEIGHTS = (0.25, 0.25, 0.25, 0.25)
 
 

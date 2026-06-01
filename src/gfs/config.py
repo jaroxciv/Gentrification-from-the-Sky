@@ -88,8 +88,10 @@ PATCH_SIZE = 256
 GEOGRAPHY = "LSOA"  # Lower Layer Super Output Area
 
 # --- Gentrification score (paper §3.1) ---------------------------------------
-# The four socioeconomic measures averaged into the neighborhood index.
-SCORE_MEASURES = ("age", "education", "housing", "income")
+# The four socioeconomic measures averaged into the neighborhood index, as the
+# column stems used throughout (e.g. ``t1_age``, ``t2_house``). Single source of
+# truth — gfs.gentrification.score imports this.
+SCORE_MEASURES = ("age", "edu", "house", "income")  # age, education, housing, income
 # Study focuses on disadvantaged neighborhoods: bottom 50th percentile in t1.
 DISADVANTAGED_PERCENTILE = 50
 

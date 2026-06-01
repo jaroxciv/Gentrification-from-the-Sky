@@ -17,7 +17,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 from typing import Any, cast
 
-import numpy as np
 import pandas as pd
 from sklearn.base import ClassifierMixin
 from sklearn.linear_model import LogisticRegression
@@ -25,7 +24,6 @@ from sklearn.model_selection import (
     GridSearchCV,
     RepeatedStratifiedKFold,
     StratifiedKFold,
-    cross_val_score,
 )
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import PowerTransformer
@@ -33,6 +31,7 @@ from sklearn.svm import LinearSVC
 from xgboost import XGBClassifier
 
 from gfs.config import RANDOM_STATE
+from gfs.modeling.evaluation import score_estimator
 
 # Pipeline step name for the estimator; grid-search params are prefixed with it.
 _CLF_STEP = "clf"
@@ -52,9 +51,6 @@ def build_pipeline(estimator: ClassifierMixin) -> Pipeline:
         ]
     )
 
-
-# Metrics reported for every model (paper §4.3).
-SCORING = ("balanced_accuracy", "f1_weighted", "roc_auc")
 
 # Grid-search CV folds and repeated-CV design (paper §4.2): 10-fold grid search,
 # 30-fold (3 repeats x 10 folds) repeated stratified CV.
@@ -180,14 +176,7 @@ def repeated_cv_metrics(
     output (e.g. plain LinearSVC).
     """
     cv = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=random_state)
-    metrics: dict[str, float] = {}
-    for metric in SCORING:
-        if metric == "roc_auc" and spec.needs_decision_function:
-            metrics[metric] = float("nan")
-            continue
-        scores = cross_val_score(estimator, X, y, scoring=metric, cv=cv, n_jobs=-1)
-        metrics[metric] = float(np.mean(scores))
-    return metrics
+    return score_estimator(estimator, X, y, cv=cv, skip_roc_auc=spec.needs_decision_function)
 
 
 @dataclass
