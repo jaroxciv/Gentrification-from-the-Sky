@@ -61,7 +61,7 @@ def run(inputs: Inputs) -> pd.DataFrame:
     planning = cast("pd.DataFrame", planning_gdf.drop(columns="geometry"))
     planning_predictors = dataset.planning_predictors(planning)
 
-    score = pd.read_csv(inputs.score_csv)
+    score = dataset.ensure_lsoa_key(pd.read_csv(inputs.score_csv))
     merged = cast(
         "pd.DataFrame",
         score.merge(lsoa_changes, on=dataset.LSOA_CODE_COL).merge(

@@ -176,6 +176,14 @@ def _get_backbone(
     return derived_model
 
 
+# Output-channel widths per EfficientNet backbone at the sliced output layer,
+# from the original TinyCD notebook.
+DEFAULT_BKBN_OUT_CHANNELS: dict[str, list[int]] = {
+    "efficientnet_b0": [32, 32, 32, 64],
+    "efficientnet_b4": [48, 64, 112, 1792],
+}
+
+
 class TinyCD(Module):
     """TinyCD Siamese change detector over a sliced EfficientNet backbone."""
 
@@ -192,11 +200,12 @@ class TinyCD(Module):
             bkbn_name, weights, output_layer_bkbn, freeze_backbone
         )
 
-        backbone_out_channels = {
-            "efficientnet_b0": bkbn_out_channels,
-            "efficientnet_b4": bkbn_out_channels,
-        }[bkbn_name]
-        assert backbone_out_channels is not None
+        # Per-backbone output-channel widths at the sliced layer. Defaults match
+        # the original notebook (efficientnet_b0 -> [32, 32, 32, 64]); callers may
+        # override via `bkbn_out_channels`.
+        if bkbn_out_channels is None:
+            bkbn_out_channels = DEFAULT_BKBN_OUT_CHANNELS[bkbn_name]
+        backbone_out_channels = bkbn_out_channels
 
         self._first_mix: MixingMaskAttentionBlock = MixingMaskAttentionBlock(
             2,

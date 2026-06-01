@@ -24,12 +24,33 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import (
     GridSearchCV,
     RepeatedStratifiedKFold,
+    StratifiedKFold,
     cross_val_score,
 )
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import PowerTransformer
 from sklearn.svm import LinearSVC
 from xgboost import XGBClassifier
 
 from gfs.config import RANDOM_STATE
+
+# Pipeline step name for the estimator; grid-search params are prefixed with it.
+_CLF_STEP = "clf"
+
+
+def build_pipeline(estimator: ClassifierMixin) -> Pipeline:
+    """Wrap an estimator behind a Yeo-Johnson power transform.
+
+    Putting the transform in the pipeline means ``GridSearchCV`` /
+    ``cross_val_score`` refit it on each training fold only, so the transform
+    never sees the held-out fold (avoids the leakage of transforming up front).
+    """
+    return Pipeline(
+        [
+            ("transform", PowerTransformer(method="yeo-johnson", standardize=True)),
+            (_CLF_STEP, estimator),
+        ]
+    )
 
 # Metrics reported for every model (paper §4.3).
 SCORING = ("balanced_accuracy", "f1_weighted", "roc_auc")
@@ -121,10 +142,14 @@ def grid_search(
     Returns the refit best estimator and its chosen parameters. Uses a
     stratified ``cv_folds``-fold split and the given ``scoring`` metric.
     """
+    pipeline = build_pipeline(spec.estimator)
+    # Grid params target the estimator step inside the pipeline.
+    param_grid = {f"{_CLF_STEP}__{k}": v for k, v in spec.param_grid.items()}
+    cv = StratifiedKFold(n_splits=cv_folds, shuffle=True, random_state=RANDOM_STATE)
     grid = GridSearchCV(
-        spec.estimator,
-        dict(spec.param_grid),
-        cv=cv_folds,
+        pipeline,
+        param_grid,
+        cv=cv,
         scoring=scoring,
         n_jobs=-1,
     )

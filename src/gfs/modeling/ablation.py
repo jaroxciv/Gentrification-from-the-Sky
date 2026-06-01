@@ -30,11 +30,8 @@ from sklearn.metrics import (
 from sklearn.model_selection import train_test_split
 
 from gfs.config import RANDOM_STATE
-from gfs.modeling.dataset import (
-    TARGET_COL,
-    TransformConfig,
-    transform_predictors,
-)
+from gfs.modeling.classify import build_pipeline
+from gfs.modeling.dataset import TARGET_COL
 
 # Threshold sweep used in the notebook ablation: 30 points from 100 to 800.
 THRESHOLD_MIN = 100.0
@@ -59,7 +56,10 @@ def threshold_predictors(
     notebook names them ``..._threshold_<t>``); these are combined with the
     planning-layer predictors, which do not depend on the threshold.
     """
-    change_predictors = [c for c in df.columns if c.endswith(str(threshold))]
+    # Match the underscore-anchored threshold suffix so e.g. threshold 10 does
+    # not also capture columns ending in 110/210 (bare `endswith("10")` would).
+    suffix = f"_{threshold}"
+    change_predictors = [c for c in df.columns if c.endswith(suffix)]
     return change_predictors + planning_predictors
 
 
@@ -91,11 +91,12 @@ def evaluate_thresholds(
     """Sweep the change threshold and score the model at each (paper §5).
 
     For every threshold: select that threshold's change columns + the planning
-    predictors, Yeo-Johnson transform them, fit ``model`` on a train split and
-    score weighted F1, balanced accuracy and ROC-AUC on the held-out split.
-    Mirrors the notebook's ``evaluate_model`` ablation loop.
+    predictors, fit ``model`` (behind a Yeo-Johnson transform) on a train split,
+    and score weighted F1, balanced accuracy and ROC-AUC on the held-out split.
+    The transform lives in a pipeline so it is fit on the training split only
+    (no leakage). Mirrors the notebook's ``evaluate_model`` ablation loop.
     """
-    clf = cast("Any", model if model is not None else default_model())
+    base = model if model is not None else default_model()
     sweep = thresholds if thresholds is not None else default_thresholds()
     points: list[AblationPoint] = []
 
@@ -104,16 +105,14 @@ def evaluate_thresholds(
         predictors = threshold_predictors(
             df, threshold, planning_predictors=planning_predictors
         )
-        data = transform_predictors(
-            df, predictors, TransformConfig(pt_transform=True)
-        )
 
-        x = cast("pd.DataFrame", data[predictors])
-        y = cast("pd.Series", data[target])
+        x = cast("pd.DataFrame", df[predictors])
+        y = cast("pd.Series", df[target])
         x_train, x_test, y_train, y_test = train_test_split(
             x, y, test_size=test_size, random_state=random_state
         )
 
+        clf = cast("Any", build_pipeline(base))
         clf.fit(x_train, y_train)
         y_pred = clf.predict(x_test)
         y_proba = clf.predict_proba(x_test)[:, 1]

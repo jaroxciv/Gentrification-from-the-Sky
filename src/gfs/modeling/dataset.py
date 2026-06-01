@@ -34,6 +34,32 @@ DISADVANTAGED_COL = "disadvantaged"
 # Satellite feature columns start with this stem (one per band).
 SATELLITE_PREFIX = "features"
 
+# Boundary / admin / target columns that are never predictors. Used to select
+# planning-layer predictors explicitly rather than guessing from name casing.
+ADMIN_COLUMNS: frozenset[str] = frozenset(
+    {
+        LSOA_CODE_COL,
+        "lsoa_codes",
+        "LSOA11NM",
+        "MSOA11CD",
+        "MSOA11NM",
+        "LAD11CD",
+        "LAD11NM",
+        "RGN11CD",
+        "RGN11NM",
+        "USUALRES",
+        "HHOLDRES",
+        "COMESTRES",
+        "POPDEN",
+        "HHOLDS",
+        "AVHHOLDSZ",
+        "geometry",
+        SCORE_COL,
+        TARGET_COL,
+        DISADVANTAGED_COL,
+    }
+)
+
 
 @dataclass(frozen=True)
 class TargetConfig:
@@ -125,14 +151,22 @@ def satellite_predictors(df: pd.DataFrame, *, prefix: str = SATELLITE_PREFIX) ->
     return [c for c in df.columns if c.startswith(prefix)]
 
 
-def planning_predictors(planning: pd.DataFrame) -> list[str]:
+def planning_predictors(
+    planning: pd.DataFrame, *, exclude: frozenset[str] = ADMIN_COLUMNS
+) -> list[str]:
     """Planning-layer predictor columns.
 
-    The LSOA boundary attributes are upper-case codes (e.g. ``LSOA11CD``); the
-    planning-layer features are mixed-case names. The notebook selects the
-    latter with ``not col.isupper()``.
+    Every column that is not a boundary/admin/target field (``exclude``) and not
+    a satellite feature is treated as a planning-layer predictor. This is
+    explicit rather than inferring membership from name casing (the notebook used
+    ``not col.isupper()``, which silently swept in any lower-case metadata
+    column such as ``lsoa_codes``).
     """
-    return [c for c in planning.columns if not c.isupper()]
+    return [
+        c
+        for c in planning.columns
+        if c not in exclude and not c.startswith(SATELLITE_PREFIX)
+    ]
 
 
 @dataclass
@@ -144,13 +178,25 @@ class ModelingTable:
     target: str = TARGET_COL
 
 
+def ensure_lsoa_key(df: pd.DataFrame, *, source_col: str = "lsoa_code") -> pd.DataFrame:
+    """Guarantee the canonical join key :data:`LSOA_CODE_COL` is present.
+
+    The gentrification-score table (``scripts/03``) keys on ``lsoa_code`` while
+    the satellite/planning features key on ``LSOA11CD``. If the canonical column
+    is missing but ``source_col`` is present, rename it; otherwise return as-is.
+    """
+    if LSOA_CODE_COL not in df.columns and source_col in df.columns:
+        return df.rename(columns={source_col: LSOA_CODE_COL})
+    return df
+
+
 def assemble_modeling_table(
     score_gdf: pd.DataFrame,
     lsoa_changes: pd.DataFrame,
     planning: pd.DataFrame,
     *,
     target_config: TargetConfig | None = None,
-    transform_config: TransformConfig | None = None,
+    score_code_col: str = "lsoa_code",
     extra_baseline: pd.DataFrame | None = None,
     extra_baseline_predictors: list[str] | None = None,
 ) -> ModelingTable:
@@ -158,15 +204,20 @@ def assemble_modeling_table(
 
     Steps (paper §3.5):
 
-    1. Merge the gentrification score, the satellite change features
-       (``lsoa_changes``) and the planning-layer features (``planning``) on the
-       LSOA code; optionally merge ``extra_baseline`` socio predictors too.
+    1. Normalize the score table's LSOA key to :data:`LSOA_CODE_COL`, then merge
+       the gentrification score, the satellite change features (``lsoa_changes``)
+       and the planning-layer features (``planning``) on it; optionally merge
+       ``extra_baseline`` socio predictors too.
     2. Binarize the score into the classification target (top/bottom quartile).
-    3. Yeo-Johnson transform the predictors.
 
-    Returns a :class:`ModelingTable` with the transformed DataFrame and the
-    predictor / target column names.
+    Predictors are returned **untransformed**: the Yeo-Johnson power transform is
+    applied inside the cross-validation pipeline (:mod:`gfs.modeling.classify`)
+    so it is refit per fold and does not leak across the train/test split.
+
+    Returns a :class:`ModelingTable` with the merged DataFrame and the predictor /
+    target column names.
     """
+    score_gdf = ensure_lsoa_key(score_gdf, source_col=score_code_col)
     merged = cast(
         "pd.DataFrame",
         score_gdf.merge(lsoa_changes, on=LSOA_CODE_COL).merge(planning, on=LSOA_CODE_COL),
@@ -180,7 +231,6 @@ def assemble_modeling_table(
     if extra_baseline_predictors:
         predictors = predictors + extra_baseline_predictors
 
-    merged = transform_predictors(merged, predictors, transform_config)
     return ModelingTable(data=merged, predictors=predictors, target=TARGET_COL)
 
 
