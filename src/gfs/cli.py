@@ -110,23 +110,9 @@ def run_landcover(*, boundary: Path = DEFAULT_BOUNDARY) -> Path:
 # --- models: change detection -----------------------------------------------
 def run_change_detection() -> None:
     """Run every canonical change-detection model and save per-band features."""
-    import torch
-
-    from gfs.change_detection.common import load_dataset, select_device
-    from gfs.change_detection.features import (
-        all_bands,
-        extract_and_save_features,
-        features_output_dir,
-        resnet_band_change_map,
-        threshold_and_save_band,
-    )
-    from gfs.change_detection.models.bidatenet import BiDateNet
-    from gfs.change_detection.models.cgnet import CGNet
-    from gfs.change_detection.models.fc_siamdiff import FCSiamDiff
-    from gfs.change_detection.models.simple_diff import simple_diff_change_map
-    from gfs.change_detection.models.tinycd import TinyCD
-    from gfs.change_detection.train import train_resnet_band, train_siamese
-    from gfs.config import CD_EPOCHS, CD_METHODS
+    from gfs.change_detection import pipeline
+    from gfs.change_detection.common import select_device
+    from gfs.config import CD_METHODS
     from gfs.seed import seed_everything
 
     seed_everything()  # deterministic weight init + data shuffling
@@ -135,45 +121,9 @@ def run_change_detection() -> None:
     device = select_device()
     _stage("Change detection (models)", f"device: {device}")
 
-    def build_siamese(method: str) -> torch.nn.Module:
-        if method == "tinycd":
-            return TinyCD(output_layer_bkbn="1", bkbn_out_channels=[32, 32, 32, 1]).to(device)
-        if method == "cgnet":
-            return CGNet(weights="DEFAULT").to(device)
-        if method == "bidatenet":
-            return BiDateNet(n_channels=1, n_classes=1).to(device)
-        if method == "fc_siamdiff":
-            return FCSiamDiff(in_channels=1, classes=1).to(device)
-        raise ValueError(f"Not a Siamese method: {method}")
-
     for method in CD_METHODS:
         console.print(f"  [cyan]{method}[/]")
-        if method == "simple_diff":
-            bands = all_bands()
-            im1, im2 = load_dataset(t1, t2, bands)
-            out_dir = features_output_dir("simple_diff")
-            for band in bands:
-                cm = simple_diff_change_map(im1[band - 1], im2[band - 1])
-                threshold_and_save_band(cm, band, "simple_diff", t2, out_dir)
-        elif method == "resnet":
-            bands = all_bands()
-            im1, im2 = load_dataset(t1, t2, bands)
-            out_dir = features_output_dir("resnet")
-            for band in bands:
-                s1, s2 = im1[band - 1 : band], im2[band - 1 : band]
-                im1_t = torch.tensor(s1, dtype=torch.float32).unsqueeze(0).to(device)
-                im2_t = torch.tensor(s2, dtype=torch.float32).unsqueeze(0).to(device)
-                model = train_resnet_band(im1_t, im2_t, ngf=1, n_blocks=4, device=device)
-                cm = resnet_band_change_map(model, s1, s2, device=device)
-                threshold_and_save_band(cm, band, "resnet", t2, out_dir)
-        else:
-            im1, im2 = load_dataset(t1, t2, [4])
-            im1_t = torch.tensor(im1, dtype=torch.float32).unsqueeze(0).to(device)
-            im2_t = torch.tensor(im2, dtype=torch.float32).unsqueeze(0).to(device)
-            model = train_siamese(
-                build_siamese(method), im1_t, im2_t, n_epochs=CD_EPOCHS, device=device
-            )
-            extract_and_save_features(model, method, t1, t2, kind="siamese", device=device)
+        pipeline.extract_method(method, t1, t2, device)
 
 
 # --- Y: gentrification score -------------------------------------------------
