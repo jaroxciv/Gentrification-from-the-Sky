@@ -22,6 +22,7 @@ the non-satellite half of the predictor set (paper §3.5/§5).
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from typing import Any, cast
 
@@ -100,16 +101,25 @@ def count_change_pixels(change_file: str, lsoa_gdf: gpd.GeoDataFrame) -> pd.Seri
     return change_counts
 
 
+def _band_number(path: str) -> int:
+    """Extract the band number from a ``features_band_<b>_<model>.tiff`` name."""
+    match = re.search(r"band_(\d+)", os.path.basename(path))
+    if match is None:
+        raise ValueError(f"Cannot parse a band number from change file: {path}")
+    return int(match.group(1))
+
+
 def list_change_files(changes_dir: str) -> list[str]:
     """List the per-band change tiffs in a ``features_<model>`` folder, band-sorted.
 
-    Filenames look like ``features_band_<b>_<model>.tiff``; we sort by the band
-    number, which is the second-to-last underscore-delimited token.
+    Filenames look like ``features_band_<b>_<model>.tiff``. The band number is
+    parsed from the ``band_<b>`` token by regex, so model names containing
+    underscores (e.g. ``fc_siamdiff``) sort correctly.
     """
     change_files = [
         os.path.join(changes_dir, x) for x in os.listdir(changes_dir) if x.endswith(".tiff")
     ]
-    return sorted(change_files, key=lambda x: int(x.split("_")[-2]))
+    return sorted(change_files, key=_band_number)
 
 
 def aggregate_changes_to_lsoa(
