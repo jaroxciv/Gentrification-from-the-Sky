@@ -19,16 +19,10 @@ across **4,085 London neighborhoods (LSOAs)** by up to **8%**, reaching a
 
 ## How it works
 
-```mermaid
-flowchart LR
-    A["Sentinel-2 imagery<br/>2016 &amp; 2021"] -->|composites| B["X: annual<br/>composites"]
-    B -->|change detection<br/>6 DL models| C["per-band<br/>change maps"]
-    C -->|LSOA aggregation| D["satellite<br/>feature matrix Φ"]
-    E["ONS census + IMD<br/>2011 &amp; 2021"] -->|gentrification score| F["Y: gentrification<br/>label"]
-    D --> G["Modeling<br/>LogReg / SVC / XGBoost"]
-    F --> G
-    G --> H["Predicted gentrification<br/>+ planning-policy analysis"]
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.svg">
+  <img alt="gfs pipeline: Sentinel-2 composites (X) and change detection -> LSOA feature matrix; ONS/IMD gentrification score (Y); modeling -> predictions and maps" src="docs/architecture-light.svg">
+</picture>
 
 | Stage | Package | Paper |
 |---|---|---|

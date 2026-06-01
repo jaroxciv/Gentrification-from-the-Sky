@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 560" font-family="'Inter','Segoe UI',system-ui,sans-serif">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.16"/>
+    </filter>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#475569"/>
+    </marker>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#f8fafc"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1180" height="560" fill="url(#bg)"/>
+
+  <!-- title -->
+  <text x="40" y="44" font-size="24" font-weight="700" fill="#0f172a">Gentrification from the Sky</text>
+  <text x="40" y="68" font-size="14" fill="#64748b">Remote sensing + machine-learning pipeline · the <tspan font-family="ui-monospace,monospace" fill="#7c3aed">gfs</tspan> package</text>
+
+  <!-- lane tags -->
+  <text x="250" y="100" font-size="11" font-weight="700" letter-spacing="1.5" fill="#0284c7">X · SATELLITE IMAGERY</text>
+  <text x="250" y="384" font-size="11" font-weight="700" letter-spacing="1.5" fill="#059669">Y · CENSUS</text>
+
+  <!-- ===== edges (drawn first, under nodes) ===== -->
+  <g stroke="#475569" stroke-width="2" fill="none">
+    <path d="M212,150 L248,150" marker-end="url(#arrow)"/>
+    <path d="M437,150 L473,150" marker-end="url(#arrow)"/>
+    <path d="M662,150 L698,150" marker-end="url(#arrow)"/>
+    <path d="M212,430 L248,430" marker-end="url(#arrow)"/>
+    <path d="M437,434 L473,434" marker-end="url(#arrow)"/>
+    <!-- Dynamic World feeds change detection (green mask) -->
+    <path d="M212,280 C360,280 405,186 472,180" stroke="#059669" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+    <!-- Phi down into modeling -->
+    <path d="M792,194 L792,248" marker-end="url(#arrow)"/>
+    <!-- binary target up into modeling -->
+    <path d="M662,434 L760,434 L760,338" marker-end="url(#arrow)"/>
+    <!-- modeling to outputs -->
+    <path d="M887,292 L923,292" marker-end="url(#arrow)"/>
+  </g>
+  <text x="330" y="238" font-size="10" fill="#059669" font-style="italic">green-areas mask</text>
+
+  <!-- ===== source chips ===== -->
+  <g filter="url(#shadow)">
+    <rect x="42" y="120" width="170" height="60" rx="12" fill="#eef2f7" stroke="#64748b" stroke-width="1.5"/>
+    <rect x="42" y="250" width="170" height="60" rx="12" fill="#eef2f7" stroke="#64748b" stroke-width="1.5"/>
+    <rect x="42" y="400" width="170" height="60" rx="12" fill="#eef2f7" stroke="#64748b" stroke-width="1.5"/>
+  </g>
+  <g text-anchor="middle" fill="#334155">
+    <text x="127" y="146" font-size="13" font-weight="600">Sentinel-2 L2A</text>
+    <text x="127" y="165" font-size="11" fill="#64748b">STAC · WASDI</text>
+    <text x="127" y="276" font-size="13" font-weight="600">Dynamic World</text>
+    <text x="127" y="295" font-size="11" fill="#64748b">Earth Engine</text>
+    <text x="127" y="426" font-size="13" font-weight="600">ONS Census + IMD</text>
+    <text x="127" y="445" font-size="11" fill="#64748b">age · edu · housing · income</text>
+  </g>
+
+  <!-- ===== top lane (X) ===== -->
+  <g filter="url(#shadow)">
+    <rect x="250" y="108" width="187" height="84" rx="12" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+    <rect x="475" y="108" width="187" height="84" rx="12" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+    <rect x="700" y="108" width="184" height="84" rx="12" fill="#cffafe" stroke="#0891b2" stroke-width="2"/>
+  </g>
+  <g text-anchor="middle">
+    <text x="343" y="138" font-size="14" font-weight="700" fill="#0c4a6e">Composites</text>
+    <text x="343" y="158" font-size="11" fill="#0369a1">median · 11 bands @ 10 m</text>
+    <text x="343" y="176" font-size="11" font-family="ui-monospace,monospace" fill="#0284c7">gfs.composites</text>
+
+    <text x="568" y="138" font-size="14" font-weight="700" fill="#4c1d95">Change detection</text>
+    <text x="568" y="158" font-size="11" fill="#6d28d9">6 deep models · §3.3</text>
+    <text x="568" y="176" font-size="11" font-family="ui-monospace,monospace" fill="#7c3aed">gfs.change_detection</text>
+
+    <text x="792" y="138" font-size="14" font-weight="700" fill="#155e75">LSOA aggregation</text>
+    <text x="792" y="158" font-size="11" fill="#0e7490">Φ feature matrix · §3.5</text>
+    <text x="792" y="176" font-size="11" font-family="ui-monospace,monospace" fill="#0891b2">gfs.modeling.features</text>
+  </g>
+
+  <!-- ===== bottom lane (Y) ===== -->
+  <g filter="url(#shadow)">
+    <rect x="250" y="392" width="187" height="84" rx="12" fill="#d1fae5" stroke="#059669" stroke-width="2"/>
+    <rect x="475" y="392" width="187" height="84" rx="12" fill="#d1fae5" stroke="#059669" stroke-width="2"/>
+  </g>
+  <g text-anchor="middle">
+    <text x="343" y="422" font-size="14" font-weight="700" fill="#065f46">Gentrification score</text>
+    <text x="343" y="442" font-size="11" fill="#047857">neighborhood index · §3.1</text>
+    <text x="343" y="460" font-size="11" font-family="ui-monospace,monospace" fill="#059669">gfs.gentrification</text>
+
+    <text x="568" y="422" font-size="14" font-weight="700" fill="#065f46">Binarize target</text>
+    <text x="568" y="442" font-size="11" fill="#047857">disadvantaged · quartiles</text>
+    <text x="568" y="460" font-size="11" fill="#047857">§4.1</text>
+  </g>
+
+  <!-- ===== modeling + outputs ===== -->
+  <g filter="url(#shadow)">
+    <rect x="700" y="250" width="187" height="84" rx="12" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+    <rect x="923" y="250" width="187" height="84" rx="12" fill="#ffe4e6" stroke="#e11d48" stroke-width="2"/>
+  </g>
+  <g text-anchor="middle">
+    <text x="793" y="280" font-size="14" font-weight="700" fill="#92400e">Modeling</text>
+    <text x="793" y="300" font-size="11" fill="#b45309">LogReg · SVC · XGBoost</text>
+    <text x="793" y="318" font-size="11" font-family="ui-monospace,monospace" fill="#d97706">gfs.modeling</text>
+
+    <text x="1016" y="280" font-size="14" font-weight="700" fill="#9f1239">Predictions + maps</text>
+    <text x="1016" y="300" font-size="11" fill="#be123c">balanced accuracy ~0.77</text>
+    <text x="1016" y="318" font-size="11" font-family="ui-monospace,monospace" fill="#e11d48">gfs.viz</text>
+  </g>
+
+  <!-- footer -->
+  <text x="40" y="536" font-size="11" fill="#94a3b8">Greater London · Sentinel-2 2016/2021 · census 2011/2021 · CUPUM 2025</text>
+</svg>
